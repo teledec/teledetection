@@ -4,7 +4,7 @@ include:
     file:
       - ".gitlab/ci/static-analysis.yml"
       - ".gitlab/ci/doc.yml"
-      - ".gitlab/ci/pip.yml"
+#      - ".gitlab/ci/pip.yml"
 
 variables:
   IMPL_MODULE_NAME: theia_dumper
