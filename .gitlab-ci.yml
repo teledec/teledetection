@@ -1,0 +1,47 @@
+include:
+  - project: "cdos-pub/pycode-quality"
+    ref: "main"
+    file:
+      - ".gitlab/ci/static-analysis.yml"
+      - ".gitlab/ci/doc.yml"
+      - ".gitlab/ci/pip.yml"
+
+variables:
+  IMPL_MODULE_NAME: theia_dumper
+
+  PYTHON_IMG: python:3.12-slim
+  PACKAGE_INSTALL_EXTRAS: "[test]"
+  PIP_PACKAGE_URL: "https://upload.pypi.org/legacy/"
+  TWINE_USERNAME: __token__
+  TWINE_PASSWORD: ${PYPI_TOKEN}
+
+  DOC_BUILD_SELF: true
+
+stages:
+  - Static Analysis
+  - Test
+  - Documentation
+#  - Pip
+
+.static_analysis_base:
+  allow_failure: false
+
+Pytest:
+  extends: .static_analysis_with_pip_install
+  stage: Test
+  except: [main, tags]
+  script:
+    - coverage run -m pytest -rsv --junit-xml=report.xml tests -o log_cli=true -s
+    - coverage report
+    - coverage xml
+    - coverage html
+  coverage: '/^TOTAL.+?(\d+\%)$/'
+  artifacts:
+    paths:
+      - htmlcov/
+    when: always
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+      junit: report.xml

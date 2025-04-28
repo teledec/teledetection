@@ -1,0 +1,64 @@
+[project]
+name = "teledetection"
+description = "Software development kit for the Geospatial Data Center of 'la Maison de la Teledetection'"
+dynamic = ["version"]
+authors = [
+    { name = "Rémi Cresson", email = "remi.cresson@inrae.fr" },
+    { name = "Pablo Boizeau", email = "pablo.boizeau@ird.fr" },
+]
+requires-python = ">=3.9"
+dependencies = [
+    "setuptools>=61.2",
+    "click>=7.1",
+    "pydantic>=1.7.3, <3.0.0",
+    "pystac>=1.0.0",
+    "pystac-client>=0.2.0",
+    "requests>=2.25.1",
+    "packaging",
+    "qrcode",
+    "appdirs",
+    "pydantic_settings",
+    # For upload
+    "rich", 
+    "rasterio", 
+    "rio-cogeo", 
+    "rio-stac",
+]
+license = { text = "Apache-2.0" }
+classifiers = [
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+[project.optional-dependencies]
+test = ["pytest", "coverage"]
+
+[build-system]
+requires = ["setuptools>=61.0", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+
+[project.scripts]
+tld = "teledetection.cli:app"
+
+[tool.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+show_error_codes = true
+pretty = true
+exclude = ["doc", "venv", ".venv"]
+
+[tool.pylint]
+disable = "W1203,R0903,E0401,W0622,C0116,C0115,W0718,W0719,W0718,R0902,R0913,R0917"
+
+[tool.pylint.MASTER]
+ignore-paths = '^.venv'
+
+[tool.setuptools]
+packages = ["teledetection"]

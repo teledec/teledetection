@@ -1,0 +1,13 @@
+__pycache__/
+.idea/
+*.egg-info/
+build/
+dist/
+draft
+.vscode/
+.coverage
+public*/
+*venv/
+*.xml
+*.tif
+*.txt
