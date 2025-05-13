@@ -3,7 +3,7 @@
 from typing import Tuple, List, cast
 from pystac import Collection, Item
 from rich import print
-from teledetection.sdk.utils import get_logger_for
+from teledetection.sdk.logger import get_logger_for
 
 from . import stac
 

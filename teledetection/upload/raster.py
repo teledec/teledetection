@@ -14,7 +14,7 @@ from pystac.extensions.raster import RasterBand, RasterExtension, Statistics
 from pystac.extensions.timestamps import ItemTimestampsExtension
 from pystac.errors import ExtensionNotImplemented
 
-from teledetection.sdk.utils import get_logger_for
+from teledetection.sdk.logger import get_logger_for
 
 logger = get_logger_for(__name__)
 

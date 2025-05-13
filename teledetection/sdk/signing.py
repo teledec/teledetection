@@ -1,7 +1,6 @@
-"""
-S3 Module.
+"""Signing module.
 
-Revamp of Microsoft Planetary Computer SAS, using S3 and custom URL signing
+Revamp of Microsoft Planetary Computer SAS, using custom URL signing
 endpoint instead.
 """
 
@@ -16,10 +15,8 @@ from typing import Any, Dict, List, Mapping, TypeVar, cast
 from enum import Enum
 from urllib.parse import parse_qs, urlparse
 
-import packaging.version
-import pydantic
 import pystac_client
-from pydantic import BaseModel  # pylint: disable = no-name-in-module
+from pydantic import BaseModel, ConfigDict  # pylint: disable = no-name-in-module
 from pystac import (
     Asset,
     Collection,
@@ -28,17 +25,12 @@ from pystac import (
     STACObjectType,
 )
 from pystac.serialization.identify import identify_stac_object_type
-from pystac.utils import datetime_to_str
 from pystac_client import ItemSearch
 
 from .http import session
 from .settings import S3_STORAGE_DOMAIN, MAX_URLS, ENV
-from .utils import get_logger_for
+from .logger import get_logger_for
 
-
-_PYDANTIC_2_0 = packaging.version.parse(
-    pydantic.__version__
-) >= packaging.version.parse("2.0.0")
 
 AssetLike = TypeVar("AssetLike", Asset, Dict[str, Any])
 
@@ -53,16 +45,8 @@ log = get_logger_for(__name__)
 class URLBase(BaseModel):  # pylint: disable = R0903
     """Base model for responses."""
 
+    model_config = ConfigDict(populate_by_name=True)
     expiry: datetime
-
-    class Config:  # pylint: disable = R0903
-        """Config for URLBase model."""
-
-        if _PYDANTIC_2_0:
-            populate_by_name = True
-        else:
-            allow_population_by_field_name = True
-            json_encoders = {datetime: datetime_to_str}
 
 
 class SignedURL(URLBase):  # pylint: disable = R0903
@@ -98,19 +82,18 @@ def sign(obj: Any, copy: bool = True) -> Any:
             mapping.
         copy (bool): Whether to sign the object in place, or make a copy.
             Has no effect for immutable objects like strings.
+
     Returns:
         Any: A copy of the object where all relevant URLs have been signed
 
     """
     raise TypeError(
-        "Invalid type, must be one of: str, Asset, Item, ItemCollection, "
-        "ItemSearch, or mapping"
+        "Invalid type, must be one of: str, Asset, Item, ItemCollection, ItemSearch, or mapping"
     )
 
 
 def sign_inplace(obj: Any) -> Any:
-    """
-    Sign the object in place.
+    """Sign the object in place.
 
     See :func:`teledetection.sign` for more.
 
@@ -182,7 +165,7 @@ def _generic_sign_urls(urls: List[str], route: SignURLRoute) -> Dict[str, str]:
         stripped_url = url.rstrip("/")
         parsed_url = urlparse(stripped_url)
         if not parsed_url.netloc.endswith(S3_STORAGE_DOMAIN):
-            # Outside DINAMIS domain
+            # Outside our domain
             signed_urls[url] = url
         # elif parsed_url.netloc == "????":
         #     # special case for public assets storing thumbnails...
@@ -359,8 +342,7 @@ def _search_and_sign(search: ItemSearch, copy: bool = True) -> ItemCollection:
 
 @sign.register(Collection)
 def sign_collection(collection: Collection, copy: bool = True) -> Collection:
-    """
-    Sign a collection.
+    """Sign a collection.
 
     Args:
         collection: STAC Collection
@@ -386,8 +368,7 @@ def sign_collection(collection: Collection, copy: bool = True) -> Collection:
 
 @sign.register(collections.abc.Mapping)
 def sign_mapping(mapping: Mapping, copy: bool = True) -> Mapping:
-    """
-    Sign a mapping.
+    """Sign a mapping.
 
     Args:
         mapping (Mapping):
@@ -402,6 +383,7 @@ def sign_mapping(mapping: Mapping, copy: bool = True) -> Mapping:
             * STAC ItemCollections
 
         copy: Whether to copy (clone) the mapping or mutate it inplace.
+
     Returns:
         signed (Mapping): The dictionary, now with signed URLs.
 
@@ -445,8 +427,7 @@ def _generic_get_signed_urls(
     urls: List[str],
     route: SignURLRoute,
 ) -> Dict[str, SignedURL]:
-    """
-    Get multiple signed URLs.
+    """Get multiple signed URLs.
 
     This will use the URL from the cache if it's present and not too close
     to expiring. The generated URL will be placed in the cache.
@@ -457,6 +438,7 @@ def _generic_get_signed_urls(
 
     Returns:
         SignedURL: the signed URL
+
     """
     # pylint: disable=too-many-statements
     # pylint: disable=too-many-locals

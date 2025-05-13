@@ -1,22 +1,14 @@
 """This module is used to upload files using HTTP requests."""
 
-from .signing import sign_url_put
-from .utils import create_session
+from teledetection.sdk.signing import sign_url_put
+from teledetection.sdk.utils import create_session
 
 
-def push(
-    local_filename: str,
-    target_url: str,
-    retry_total: int = 5,
-    retry_backoff_factor: float = 0.8,
-):
+def push(local_filename: str, target_url: str):
     """Publish a local file to the cloud."""
     remote_presigned_url = sign_url_put(target_url)
 
-    session = create_session(
-        retry_total=retry_total,
-        retry_backoff_factor=retry_backoff_factor,
-    )
+    session = create_session()
 
     with open(local_filename, "rb") as f:
         ret = session.put(remote_presigned_url, data=f, timeout=10)

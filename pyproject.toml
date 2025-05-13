@@ -18,11 +18,6 @@ dependencies = [
     "qrcode",
     "appdirs",
     "pydantic_settings",
-    # For upload
-    "rich", 
-    "rasterio", 
-    "rio-cogeo", 
-    "rio-stac",
 ]
 license = { text = "Apache-2.0" }
 classifiers = [
@@ -36,6 +31,7 @@ classifiers = [
 ]
 [project.optional-dependencies]
 test = ["pytest", "coverage"]
+upload = ["rich", "rasterio", "rio-cogeo", "rio-stac"]
 
 [build-system]
 requires = ["setuptools>=61.0", "setuptools_scm[toml]>=6.2"]
@@ -44,7 +40,7 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools_scm]
 
 [project.scripts]
-tld = "teledetection.cli:app"
+tld = "teledetection.cli:tld"
 
 [tool.pydocstyle]
 convention = "google"
@@ -61,4 +57,4 @@ disable = "W1203,R0903,E0401,W0622,C0116,C0115,W0718,W0719,W0718,R0902,R0913,R09
 ignore-paths = '^.venv'
 
 [tool.setuptools]
-packages = ["teledetection"]
+packages = ["teledetection", "teledetection.sdk", "teledetection.upload"]

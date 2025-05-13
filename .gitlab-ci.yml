@@ -4,38 +4,57 @@ include:
     file:
       - ".gitlab/ci/static-analysis.yml"
       - ".gitlab/ci/doc.yml"
-#      - ".gitlab/ci/pip.yml"
+      - ".gitlab/ci/docker-compose-tests.yml"
+      - ".gitlab/ci/pip.yml"
 
+default:
+  tags:
+    - armageddon
+   
 variables:
-  IMPL_MODULE_NAME: theia_dumper
-
   PYTHON_IMG: python:3.12-slim
-  PACKAGE_INSTALL_EXTRAS: "[test]"
+  PACKAGE_INSTALL_EXTRAS: "[test,upload]"
   PIP_PACKAGE_URL: "https://upload.pypi.org/legacy/"
   TWINE_USERNAME: __token__
   TWINE_PASSWORD: ${PYPI_TOKEN}
+  DOCKER_COMPOSE_CHDIR: "tests"
 
   DOC_BUILD_SELF: true
 
 stages:
-  - Static Analysis
+  - Docker compose tests
   - Test
+  - Static Analysis
   - Documentation
-#  - Pip
+  - Pip
 
 .static_analysis_base:
   allow_failure: false
 
-Pytest:
-  extends: .static_analysis_with_pip_install
-  stage: Test
-  except: [main, tags]
+Tests with docker compose:
+  coverage: '/^TOTAL.+?(\d+\%)$/'
+  after_script:
+    - ls -lha
+  artifacts:
+    paths:
+      - .coverage
+    reports:
+      junit: report.xml
+
+Code coverage:
+  stage: Static Analysis
+  image: python:3.10-slim
   script:
-    - coverage run -m pytest -rsv --junit-xml=report.xml tests -o log_cli=true -s
+    - ls -lha
+    - mkdir /app
+    - cp -r . /app
+    - pip install coverage
     - coverage report
     - coverage xml
     - coverage html
-  coverage: '/^TOTAL.+?(\d+\%)$/'
+  needs:
+    - Tests with docker compose
+  except: [main, tags]
   artifacts:
     paths:
       - htmlcov/
@@ -44,4 +63,3 @@ Pytest:
       coverage_report:
         coverage_format: cobertura
         path: coverage.xml
-      junit: report.xml

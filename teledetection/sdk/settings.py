@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings
 from pydantic.types import NonNegativeInt, PositiveInt, PositiveFloat
 from pydantic import field_validator
 import appdirs  # type: ignore
-from .utils import get_logger_for
+from .logger import get_logger_for
 
 log = get_logger_for(__name__)
 
@@ -13,9 +13,7 @@ log = get_logger_for(__name__)
 APP_NAME = "teledetection"
 MAX_URLS = 64
 S3_STORAGE_DOMAIN = "meso.umontpellier.fr"
-DEFAULT_SIGNING_ENDPOINT = (
-    "https://s3-signing-cdos.apps.okd.crocc.meso.umontpellier.fr/"
-)
+DEFAULT_SIGNING_ENDPOINT = "https://s3-signing.stac.teledetection.fr"
 
 
 class Settings(BaseSettings):
@@ -28,7 +26,7 @@ class Settings(BaseSettings):
     tld_secret_key: str = ""
     tld_retry_total: PositiveInt = 10
     tld_retry_backoff_factor: PositiveFloat = 0.8
-    tld_signing_disable_auth: bool = False
+    tld_disable_auth: bool = False
     tld_signing_endpoint: str = DEFAULT_SIGNING_ENDPOINT
 
     @field_validator("tld_signing_endpoint", mode="after")

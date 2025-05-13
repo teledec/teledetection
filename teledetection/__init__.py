@@ -13,7 +13,6 @@ from teledetection.sdk.signing import (
     sign_url_put,
 )  # noqa
 from .sdk.oauth2 import OAuth2Session  # noqa
-from .sdk.upload import push
 from .sdk.http import get_headers, get_userinfo, get_username
 
 try:

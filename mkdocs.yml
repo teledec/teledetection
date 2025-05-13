@@ -1,0 +1,80 @@
+# mkdocs.yml
+extra_css:
+  - stylesheets/extra.css
+
+theme:
+  palette:
+    primary: custom
+  logo: logo.png
+  favicon: logo.png
+  name: "material"
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - content.code.annotate
+    - toc.follow
+    - navigation.instant
+    - content.code.copy
+
+plugins:
+- search
+- gen-files:
+    scripts:
+    - doc/gen_ref_pages.py
+- mkdocstrings:
+    watch:
+    - teledetection/
+- literate-nav:
+    nav_file: SUMMARY.md
+- section-index
+- mermaid2
+
+nav:
+- Home: index.md
+- Credentials: credentials.md
+- Examples:
+  - Basic example: examples/basic.md
+  - With rasterio: examples/processing_examples_rasterio.md
+  - With pyotb: examples/processing_examples_pyotb.md
+- Upload:
+  - Create a STAC collection: sample.md
+  - Get push access: access.md
+  - Upload: upload.md
+  - Additional resources: additional_resources.md
+- Advanced use: advanced.md
+- Reference:
+  - API reference: reference/
+  - CLI reference: cli-ref.md
+- Additional resources: additional_resources.md
+
+# Customization
+extra:
+  feature:
+    tabs: true
+  social:
+    - icon: fontawesome/brands/gitlab
+      link: https://forgemia.inra.fr/cdos-pub/teledetection
+
+markdown_extensions:
+  - attr_list
+  - admonition
+  - toc:
+      permalink: true
+      title: On this page
+      toc_depth: 1-3
+  - mkdocs-click
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
+# rest of the navigation..
+site_name: Teledetection
+repo_url: https://github.com/teledec/teledetection
+repo_name: Teledetection
+docs_dir: doc/

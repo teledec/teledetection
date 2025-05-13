@@ -1,6 +1,7 @@
 """Test file."""
 
 import os
+import glob
 import shutil
 import tempfile
 import urllib.request
@@ -10,28 +11,42 @@ import pystac
 import pystac_client
 import pytest
 import requests
-import utils  # type: ignore
 
-from teledetection import cli, sign_inplace
-from teledetection.upload import raster, stac
+from utils import run_cli_cmd
 
-utils.set_test_stac_ep()
 
+from teledetection import sign, sign_inplace
+from teledetection.upload import raster, stac, diff, transfer
+from teledetection.cli import (
+    collection_diff,
+    grab,
+    list_col_items,
+    list_cols,
+    publish,
+    DEFAULT_S3_EP,
+)
+from teledetection.sdk.logger import get_logger_for
+
+
+log = get_logger_for(__name__)
+
+STAC_ENDPOINT = "https://stacapi-dev.stac.teledetection.fr"
 DEFAULT_COL_HREF = "http://hello.fr/collections/collection-for-tests"
 IMAGE_HREF = (
     "https://gitlab.orfeo-toolbox.org/orfeotoolbox/"
     "otb/-/raw/develop/Data/Input/Capitole_Rasterization.tif"
 )
-COL_ID = "collection-for-theia-dumper-tests"
+COL_ID = "test-collection-for-upload"
 items_ids = ["item_1", "item_2"]
 RASTER_FILE1 = "/tmp/raster1.tif"
 RASTER_FILE2 = "/tmp/folder1/raster2.tif"
 RASTER_FILE3 = "/tmp/folder/raster3.tif"
+STORAGE_BUCKET = "sm1-gdc-tests"
 
 handler = stac.StacUploadTransactionsHandler(
-    stac_endpoint=utils.STAC_EP_DEV,
-    storage_endpoint=cli.DEFAULT_S3_EP,
-    storage_bucket="sm1-gdc-tests",
+    stac_endpoint=STAC_ENDPOINT,
+    storage_endpoint=DEFAULT_S3_EP,
+    storage_bucket=STORAGE_BUCKET,
     assets_overwrite=True,
     sign=False,
 )
@@ -70,7 +85,7 @@ def clear():
 
 def remote_col_test(expected_bbox):
     """Run tests on a remote collection."""
-    api = pystac_client.Client.open(cli.DEFAULT_STAC_EP)
+    api = pystac_client.Client.open(STAC_ENDPOINT)
     col = api.get_collection(COL_ID)
     extent = col.extent.spatial.bboxes
     assert len(extent) == 1
@@ -130,7 +145,7 @@ def create_collection(col_href: str):
         id=COL_ID,
         extent=pystac.Extent(spat_extent, temp_extent),
         description="Some description",
-        title="Dummy collection for Theia-Dumper tests",
+        title="Dummy collection for teledetection-upload tests",
         href=col_href,
         providers=[
             pystac.Provider("INRAE"),
@@ -174,15 +189,66 @@ def generate_item_collection(file_pth, relative=True):
     icol.save_object(file_pth)
 
 
+def test_push():
+    """Push a file remotely."""
+    local_file = "/tmp/toto.txt"
+
+    with open(local_file, "w", encoding="utf-8") as file_handle:
+        file_handle.write("hello world")
+
+    target_url = "https://s3-data.meso.umontpellier.fr/sm1-gdc-tests/titi.txt"
+
+    transfer.push(local_filename=local_file, target_url=target_url)
+    log.info("push OK")
+
+    signed_url = sign(target_url)
+    log.info("sign OK")
+
+    res = requests.get(signed_url, stream=True, timeout=10)
+    assert res.status_code == 200, "Get NOK"
+    log.info("get OK")
+
+    log.info("Done")
+
+
+@pytest.mark.parametrize("overwrite", [["-o"], []])
+@pytest.mark.parametrize("keep_cog_dir", [True, False])
+def test_publish_w_cli(overwrite: list, keep_cog_dir: bool):
+    """Handle the STAC object with CLI."""
+    log.info("Testing CLI with ovr=%s and keep_cog_dir=%s", overwrite, keep_cog_dir)
+    cog_dir = "/tmp/cog"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        generate_collection(tmpdir)
+        run_cli_cmd(
+            publish,
+            [
+                os.path.join(tmpdir, "collection.json"),
+                "--stac_endpoint",
+                STAC_ENDPOINT,
+                "--storage_endpoint",
+                DEFAULT_S3_EP,
+                "-b",
+                STORAGE_BUCKET,
+            ]
+            + overwrite
+            + (["--keep_cog_dir", cog_dir] if keep_cog_dir else []),
+        )
+        if keep_cog_dir and overwrite:
+            files = glob.glob(f"{cog_dir}/*.tif")
+            assert files
+            shutil.rmtree(cog_dir)
+        remote_col_test(BBOX_ALL)
+        clear()
+
+
 @pytest.mark.parametrize("assets_overwrite", [False, True])
 @pytest.mark.parametrize("relative", [False, True])
 def test_item_collection(assets_overwrite, relative):
     """Test item collection."""
-
     handler.assets_overwrite = assets_overwrite
     # we need to create an empty collection before
     col = create_collection(DEFAULT_COL_HREF)
-    handler.publish_collection(col=col)
+    handler.publish_collection(col)
 
     with tempfile.NamedTemporaryFile() as tmp:
         generate_item_collection(tmp.name, relative=relative)
@@ -198,7 +264,8 @@ def test_collection(assets_overwrite, relative):
     handler.assets_overwrite = assets_overwrite
     with tempfile.TemporaryDirectory() as tmpdir:
         generate_collection(tmpdir, relative=relative)
-        handler.load_and_publish(os.path.join(tmpdir, "collection.json"))
+        col_pth = os.path.join(tmpdir, "collection.json")
+        handler.load_and_publish(col_pth)
         remote_col_test(BBOX_ALL)
         clear()
 
@@ -207,25 +274,103 @@ def test_collection(assets_overwrite, relative):
 @pytest.mark.parametrize("relative", [False, True])
 def test_collection_multipart(assets_overwrite, relative):
     """Test collection."""
-    print(f"\nRelative: {relative}")
+    log.info(f"\nRelative: {relative}")
     handler.assets_overwrite = assets_overwrite
     for item_id in items_ids:
         with tempfile.TemporaryDirectory() as tmpdir:
             generate_collection(tmpdir, relative=relative, items=[create_item(item_id)])
-            handler.load_and_publish(os.path.join(tmpdir, "collection.json"))
+            col_pth = os.path.join(tmpdir, "collection.json")
+            handler.load_and_publish(col_pth)
     remote_col_test(BBOX_ALL)
     clear()
 
 
-def _test_all():
-    for relative in [False, True]:
-        for assets_overwrite in [False, True]:
-            handler.assets_overwrite = assets_overwrite
+def test_get():
+    """Test get collections, items, etc."""
 
-            test_collection(assets_overwrite, relative)
-            test_item_collection(assets_overwrite, relative)
-            test_collection_multipart(assets_overwrite, relative)
+    for col in handler.client.get_collections():
+        col_from_handler = handler.client.get_collection(col.id)
+        assert col_from_handler
+        assert isinstance(col_from_handler, pystac.Collection)
+        items = handler.get_items(col_id=col.id, max_items=1)  # test get_items()
+        assert isinstance(items, list)
+        for item in items:
+            item_from_handler = handler.get_item(
+                col_id=col.id, item_id=item.id
+            )  # test get_item()
+            assert item_from_handler
+            assert isinstance(item_from_handler, pystac.Item)
 
 
-if __name__ == "__main__":
-    _test_all()
+def test_diff():
+    """Test diff."""
+
+    col1, items = create_items_and_collection(
+        relative=True, col_href="/tmp/collection.json"
+    )
+    col2 = col1.full_copy()
+
+    item = items[0].full_copy()
+    item.id += "_test"
+    col2.add_item(item, item.id)
+
+    item = items[0].full_copy()
+    item.id += "_test_other"
+    col1.add_item(item, item.id)
+
+    diff.generate_items_diff(col1, col2)
+    diff.collections_defs_are_different(col1, col2)
+
+    col1_filepath = "/tmp/col1.json"
+    col1.set_self_href(col1_filepath)
+    col1.save(catalog_type=pystac.CatalogType.RELATIVE_PUBLISHED)
+
+    diff.compare_local_and_upstream(
+        stac.StacTransactionsHandler(stac.DEFAULT_STAC_EP, sign=False),
+        col1_filepath,
+        "costarica-sentinel-2-l3-seasonal-spectral-indices-M",
+    )
+
+
+def test_cli_list_cols():
+    """Test list cols."""
+    run_cli_cmd(list_cols)
+    run_cli_cmd(list_col_items, ["--col_id", "spot-6-7-drs"])
+
+
+def test_cli_grab():
+    """Test CLI grab."""
+    run_cli_cmd(grab, ["--col_id", "spot-6-7-drs", "--out_json", "/tmp/col.json"])
+    run_cli_cmd(
+        grab, ["--col_id", "spot-6-7-drs", "--out_json", "/tmp/col.json", "--pretty"]
+    )
+    run_cli_cmd(
+        grab,
+        [
+            "--col_id",
+            "spot-6-7-drs",
+            "--item_id",
+            "SPOT7_MS_201805051026429_SPOT7_P_201805051026429_1",
+            "--out_json",
+            "/tmp/item.json",
+        ],
+    )
+    run_cli_cmd(
+        grab,
+        [
+            "--col_id",
+            "spot-6-7-drs",
+            "--item_id",
+            "SPOT7_MS_201805051026429_SPOT7_P_201805051026429_1",
+            "--out_json",
+            "/tmp/item.json",
+            "--pretty",
+        ],
+    )
+
+
+def test_cli_diff():
+    """Test diff."""
+    run_cli_cmd(
+        collection_diff, ["--remote_id", "spot-6-7-drs", "--col_path", "/tmp/col.json"]
+    )

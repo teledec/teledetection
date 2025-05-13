@@ -5,8 +5,10 @@ import io
 import time
 from abc import abstractmethod
 from typing import Dict
-import qrcode  # type: ignore
-from .utils import create_session, get_logger_for
+import qrcode
+
+from .logger import get_logger_for  # type: ignore
+from .utils import create_session
 from .model import JWT, DeviceGrantResponse
 from .settings import ENV
 
@@ -29,12 +31,20 @@ def retrieve_token_endpoint():
     ]["tokenUrl"]
 
 
+class RefreshTokenError(Exception):
+    """Unable to refresh token."""
+
+
+class ExpiredAuthLinkError(Exception):
+    """Authentication link has expired."""
+
+
 class GrantMethodBase:
     """Base class for grant methods."""
 
+    client_id: str
     headers: Dict[str, str] = {"Content-Type": "application/x-www-form-urlencoded"}
     _token_endpoint: str | None = None
-    client_id: str
 
     def get_token_endpoint(self):
         """Get the token endpoint."""
@@ -54,16 +64,6 @@ class GrantMethodBase:
             "client_id": self.client_id,
             "scope": "openid offline_access",
         }
-
-    def get_userinfo(self):
-        """Get the userinfo endpoint."""
-        if not self._token_endpoint:
-            self._token_endpoint = retrieve_token_endpoint()
-        openapi_url = retrieve_token_endpoint().replace("/token", "/userinfo")
-
-        _session = create_session()
-        res = _session.get(openapi_url, timeout=10, headers=self.headers)
-        return res.json()
 
     def refresh_token(self, old_jwt: JWT) -> JWT:
         """Refresh the token."""
@@ -85,7 +85,7 @@ class GrantMethodBase:
         if ret.status_code == 200:
             log.debug(ret.text)
             return JWT.from_dict(ret.json())
-        raise ConnectionError("Unable to refresh token")
+        raise RefreshTokenError
 
 
 class DeviceGrant(GrantMethodBase):
@@ -138,12 +138,13 @@ class DeviceGrant(GrantMethodBase):
                 )
                 elapsed = time.time() - start
                 log.debug(
-                    "Elapsed: %s, status: %s",
+                    "Elapsed: %.0f, status: %s (%.0f seconds left)",
                     elapsed,
                     ret.status_code,
+                    response.expires_in - elapsed,
                 )
                 if elapsed > response.expires_in:
-                    raise ConnectionError("Authentication link has expired.")
+                    raise ExpiredAuthLinkError
                 if ret.status_code != 200:
                     time.sleep(response.interval)
                 else:
@@ -167,37 +168,10 @@ class OAuth2Session:
             self.jwt_issuance = now
             self.jwt.to_config_dir()
         else:
-            log.fatal("No OAuth2 credentials to save")
+            log.warning("No OAuth2 credentials to save")
 
-    def refresh_if_needed(self):
-        """Refresh the token if ttl is too short."""
-        ttl_margin_seconds = 30
-        now = datetime.datetime.now()
-        jwt_expires_in = datetime.timedelta(seconds=self.jwt.expires_in)
-        access_token_ttl = self.jwt_issuance + jwt_expires_in - now
-        access_token_ttl_seconds = access_token_ttl.total_seconds()
-        log.debug("access_token_ttl is %s", access_token_ttl_seconds)
-        if access_token_ttl_seconds >= ttl_margin_seconds:
-            # Token is still valid
-            log.debug("Credentials still valid")
-            return
-        if access_token_ttl_seconds < ttl_margin_seconds:
-            # Access token in not valid, but refresh might be
-            try:
-                self.jwt = self.grant.refresh_token(self.jwt)
-            except ConnectionError as con_err:
-                log.warning(
-                    "Unable to refresh token (reason: %s). "
-                    "Renewing initial authentication.",
-                    con_err,
-                )
-                self.jwt = self.grant.get_first_token()
-        else:
-            self.jwt = self.grant.get_first_token()
-        self.save_token(now)
-
-    def get_access_token(self) -> str:
-        """Return the access token."""
+    def _init_jwt(self):
+        """Initialize the JWT."""
         if not self.jwt:
             # First JWT initialisation
             self.jwt = JWT.from_config_dir()
@@ -206,6 +180,35 @@ class OAuth2Session:
             self.jwt = self.grant.get_first_token()
             self.save_token(datetime.datetime.now())
 
-        self.refresh_if_needed()
+    def _refresh_if_needed(self):
+        """Refresh the token if ttl is too short."""
+        self._init_jwt()
+        ttl_margin_seconds = 30
+        now = datetime.datetime.now()
+        jwt_expires_in = datetime.timedelta(seconds=self.jwt.expires_in)
+        access_token_ttl = self.jwt_issuance + jwt_expires_in - now
+        access_token_ttl_seconds = access_token_ttl.total_seconds()
+        log.debug("access_token_ttl is %s", access_token_ttl_seconds)
+        if access_token_ttl_seconds < ttl_margin_seconds:
+            # Access token in not valid, but refresh might be
+            try:
+                self.jwt = self.grant.refresh_token(self.jwt)
+            except RefreshTokenError as con_err:
+                log.warning(
+                    "Unable to refresh token (reason: %s). "
+                    "Renewing initial authentication.",
+                    con_err,
+                )
+                self.jwt = self.grant.get_first_token()
+        else:
+            # Token is still valid
+            log.debug("Credentials still valid")
+            return
+        self.save_token(now)
 
+    def get_access_token(self) -> str:
+        """Return the access token."""
+        self._init_jwt()
+        self._refresh_if_needed()
+        assert self.jwt
         return self.jwt.access_token

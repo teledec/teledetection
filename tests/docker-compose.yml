@@ -1,0 +1,15 @@
+services:
+  tests:
+    container_name: tests
+    environment:
+      LOGLEVEL: INFO
+      SKIP_AUTH_LINK: OFF
+      INDENT_JSON: ON
+      TLD_SIGNING_ENDPOINT: "https://s3-signing-dev.stac.teledetection.fr"
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile.tests
+    command: >
+      bash -c "coverage run -m pytest -rsvvv --junit-xml=report.xml tests -o log_cli=true -s && coverage report -m"
+    volumes:
+      - ..:/app

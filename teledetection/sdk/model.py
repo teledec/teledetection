@@ -4,7 +4,7 @@ import os
 import json
 from typing import Dict
 from pydantic import BaseModel, Field, ConfigDict  # pylint: disable = no-name-in-module
-from .utils import get_logger_for
+from .logger import get_logger_for
 from .settings import Settings, get_config_path
 
 log = get_logger_for(__name__)

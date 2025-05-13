@@ -12,6 +12,9 @@
 <a href="LICENSE">
 <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg">
 </a>
+<a href="https://forgemia.inra.fr/cdos-pub/teledetection/-/commits/main">
+<img src="https://forgemia.inra.fr/cdos-pub/teledetection/badges/main/coverage.svg">
+
 </p>
 
 **teledetection** enables to use the STAC based geospatial data infrastructure 

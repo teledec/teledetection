@@ -16,12 +16,11 @@ from requests.adapters import HTTPAdapter, Retry
 from pystac import Collection, Item, ItemCollection
 from rich.pretty import pretty_repr
 
-from . import raster
-from teledetection.sdk.utils import get_logger_for
+from teledetection.sdk.logger import get_logger_for
 from teledetection.sdk.http import get_headers
 from teledetection.sdk.signing import sign, sign_inplace
-from teledetection.sdk.upload import push
-
+from .transfer import push
+from . import raster
 
 logger = get_logger_for(__name__)
 

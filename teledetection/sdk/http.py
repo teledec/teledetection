@@ -3,7 +3,8 @@
 from typing import Dict, Any
 from ast import literal_eval
 from pydantic import BaseModel, ConfigDict
-from .utils import get_logger_for, create_session
+from .logger import get_logger_for
+from .utils import create_session
 from .oauth2 import OAuth2Session, retrieve_token_endpoint
 from .model import ApiKey
 from .settings import ENV
@@ -57,10 +58,7 @@ class HTTPSession:
 
     def __init__(self, timeout=10):
         """Initialize the HTTP session."""
-        self.session = create_session(
-            retry_total=ENV.tld_retry_total,
-            retry_backoff_factor=ENV.tld_retry_backoff_factor,
-        )
+        self.session = create_session()
         self.timeout = timeout
         self.headers = {
             "Content-Type": "application/json",
@@ -79,10 +77,8 @@ class HTTPSession:
     def prepare_connection_method(self):
         """Set the connection method."""
         # Custom server without authentication method
-        if ENV.tld_signing_disable_auth:
-            self._method = BareConnectionMethod(
-                endpoint=ENV.tld_signing_endpoint
-            )
+        if ENV.tld_disable_auth:
+            self._method = BareConnectionMethod(endpoint=ENV.tld_signing_endpoint)
 
         # API key method
         elif api_key := ApiKey.grab():
@@ -98,7 +94,7 @@ class HTTPSession:
         url = f"{method.endpoint}{route}"
         headers = {**self.headers, **method.get_headers()}
         log.debug("POST to %s", url)
-        response = self.session.post(url, params=params, headers=headers, timeout=10)
+        response = self.session.post(url, json=params, headers=headers, timeout=10)
         try:
             response.raise_for_status()
         except Exception as e:
