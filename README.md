@@ -20,9 +20,9 @@
 **teledetection** enables to use the STAC based geospatial data infrastructure 
 of *la Maison de la Teledetection*.
 
-For more information read the [documentation](https://cdos-pub.pages.mia.inra.fr/teledetection).
+For more information read the [documentation](https://teledetection.readthedocs.io).
 
 ## Contact
 
-remi cresson @ inrae
-pablo boizeau @ ird
+- remi cresson @ inrae
+- pablo boizeau @ ird
