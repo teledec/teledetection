@@ -10,7 +10,7 @@ aoi_bounds = [3.944092, 43.526638, 4.014816, 43.568420]
 
 # retrieving the relevant STAC Items
 api = pystac_client.Client.open(
-    "https://stacapi.stac.teledetection.fr",
+    "https://api.stac.teledetection.fr",
     modifier=teledetection.sign_inplace,
 )
 

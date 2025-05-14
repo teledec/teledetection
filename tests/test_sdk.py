@@ -17,7 +17,7 @@ from teledetection.cli import (
 from teledetection.sdk.logger import get_logger_for
 
 
-STAC_ENDPOINT = "https://stacapi.stac.teledetection.fr"
+STAC_ENDPOINT = "https://api.stac.teledetection.fr"
 
 log = get_logger_for(__name__)
 

@@ -5,7 +5,7 @@ services:
       LOGLEVEL: INFO
       SKIP_AUTH_LINK: OFF
       INDENT_JSON: ON
-      TLD_SIGNING_ENDPOINT: "https://s3-signing-dev.stac.teledetection.fr"
+      TLD_SIGNING_ENDPOINT: "https://signing-dev.stac.teledetection.fr"
     build:
       context: ..
       dockerfile: tests/Dockerfile.tests

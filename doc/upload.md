@@ -36,7 +36,7 @@ Another way is to use the python API:
 from teledetection.stac import TransactionsHandler
 
 handler = TransactionsHandler(
-    stac_endpoint="https://stacapi.stac.teledetection.fr",
+    stac_endpoint="https://api.stac.teledetection.fr",
     storage_endpoint="https://s3-data.meso.umontpellier.fr",
     storage_bucket="sm1-gdc/some-path",
     assets_overwrite=True

@@ -30,7 +30,7 @@ from teledetection.sdk.logger import get_logger_for
 
 log = get_logger_for(__name__)
 
-STAC_ENDPOINT = "https://stacapi-dev.stac.teledetection.fr"
+STAC_ENDPOINT = "https://api-dev.stac.teledetection.fr"
 DEFAULT_COL_HREF = "http://hello.fr/collections/collection-for-tests"
 IMAGE_HREF = (
     "https://gitlab.orfeo-toolbox.org/orfeotoolbox/"

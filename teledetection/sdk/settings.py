@@ -13,7 +13,7 @@ log = get_logger_for(__name__)
 APP_NAME = "teledetection"
 MAX_URLS = 64
 S3_STORAGE_DOMAIN = "meso.umontpellier.fr"
-DEFAULT_SIGNING_ENDPOINT = "https://s3-signing.stac.teledetection.fr"
+DEFAULT_SIGNING_ENDPOINT = "https://signing.stac.teledetection.fr"
 
 
 class Settings(BaseSettings):

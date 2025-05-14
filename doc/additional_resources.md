@@ -2,9 +2,9 @@
 
 ## API Documentation
 
-- [*Maison de la Teledetection* STAC API](https://stacapi.stac.teledetection.fr/api.html)
+- [*Maison de la Teledetection* STAC API](https://api.stac.teledetection.fr/api.html)
 - [*THEIA-MTD* STAC API](https://theia.stac.teledetection.fr/api.html)
-- [*Maison de la Teledetection* URL signing API](https://s3-signing.stac.teledetection.fr/docs)
+- [*Maison de la Teledetection* URL signing API](https://signing.stac.teledetection.fr/docs)
 
 ## STAC documentation
 

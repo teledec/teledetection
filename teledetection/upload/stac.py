@@ -24,7 +24,7 @@ from . import raster
 
 logger = get_logger_for(__name__)
 
-DEFAULT_STAC_EP = "https://stacapi.stac.teledetection.fr"
+DEFAULT_STAC_EP = "https://api.stac.teledetection.fr"
 DEFAULT_S3_EP = "https://s3-data.meso.umontpellier.fr"
 DEFAULT_S3_STORAGE = "sm1-gdc-ext"
 

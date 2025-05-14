@@ -6,7 +6,7 @@ import rasterio.warp  # type: ignore
 from teledetection import sign_inplace
 
 api = Client.open(
-    "https://stacapi.stac.teledetection.fr",
+    "https://api.stac.teledetection.fr",
     modifier=sign_inplace,
 )
 
