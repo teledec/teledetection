@@ -61,7 +61,6 @@ Code coverage:
     - ls -lha
   needs:
     - Tests with docker compose
-  except: [main, tags]
   artifacts:
     paths:
       - htmlcov/
