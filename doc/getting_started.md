@@ -55,36 +55,7 @@ print(sign(href))
 The first time the code in run, if the user has never authenticate with the 
 single-sign-on (SSO), it will be prompted to do so:
 
-```
-INFO:teledetection.cli:Running CLI without upload support. To install it, use `pip install teledetection[upload]`
-INFO:teledetection.sdk.oauth2:Open the following URL in your browser to grant access:
-INFO:teledetection.sdk.oauth2: https://auth.stac.teledetection.fr/realms/mtd/device?user_code=XYZA-1234 
-INFO:teledetection.sdk.oauth2:                                                 
-                                                 
-    █▀▀▀▀▀█   ▄█▄█ ▀▄ █▀▀  ▀ ▀ ▄▄▄█▀▀ █▀▀▀▀▀█    
-    █ ███ █ █  ▀ █▀▀▄ ▄ ██▄ ▀ ▄▄ ▄ ▀▄ █ ███ █    
-    █ ▀▀▀ █ █    ▀██ ▄▄▀▀▄ ▀▄██▄▀██▀█ █ ▀▀▀ █    
-    ▀▀▀▀▀▀▀ █ ▀ ▀ █▄█ ▀ █▄█▄▀ █ █ ▀▄▀ ▀▀▀▀▀▀▀    
-    █ ▀▀██▀▄ █▄▄▀▀▄▄▄▀█▄█▄▀█▀█▀ ▄▀▄▄▄▄███▀█▄▄    
-     █▄██ ▀█▄█▀█ ██▄  █ ▀██ ▀ ██▄▀█▄█▀▄▄ ▄  ▄    
-     ▄▀  ▀▀▄█▄▄  █ ▄█▀▄▀▄ ▀  █▀▄▄▀▄█▄▄▄▄▄▀▀█▄    
-    █▄ █▀█▀▀██ ▀▄▄ █▀  █▄██  ▀███  ▄█▀▄█ ▄ ▄     
-    █▄▄▀▀█▀█▄▄█▄▄▀ ▀▄█ █▄ ▀█▀▀▀ ██▄██▀▄█▄▀█ █    
-    ▄ ▀▄██▀▀█▀▀ ▀   ▄█▄▄█▄▄▄▀▀███▀ ▄█▀█ ██ ▄     
-     █▄ ▀▀▀█  █ ▀▀ ▄█▄▄██▀███ ▀  ▀▄█▄▄▄█▄▄▀█▄    
-     ▀ █▄█▀▄  ▀███▀█▄▀▄▄▄▄▀▄  ▄▀▀  ▄▄▄▄██▀ ▄▄    
-    █▄▀▄▄ ▀ ▄█▀▄▀ ▄▄ ▀▄█▄ ▀█▀▀▀▀▄█ █  ▄ ▄█▀▄▄    
-    █▀█▀ ▄▀ ██▀▄▄▀▄█    ███   █▀▀▀ ▄█   ▄▄       
-    ▄█▄ ▀ ▀▄█▄▀ ▄▀▄▀▄▀▄▀  ▀██▀█▀▀▀▄▀█ ▄▄▄▀▀██    
-    █ ▀▀▄ ▀ █ ▀ ██▄█ ▀▄▄██▄▄█ ▀██ ▀▄ ██▄ ▀▀▄     
-    ▀   ▀▀▀ ██▀▄▀ ▄█ ▀▄▄ ▄██▀█▀▀▄▀▄ █▀▀▀█▄▀ █    
-    █▀▀▀▀▀█ ▄█▄█  ▀ ▄ ▀▄▀▄  ▄ ▀█▄ ▄▀█ ▀ ██       
-    █ ███ █ ██▄▄█▀▄▀▄▄▀▄▄█▀█▀▄█ ▄█▄ ██▀█▀███▄    
-    █ ▀▀▀ █ ▀█ ▄▄▄▀▄▀▄ ▄██▄▄▄▀▄▀▀ ▀ ▄▀▀▀██▀▄     
-    ▀▀▀▀▀▀▀ ▀▀▀     ▀  ▀  ▀ ▀▀ ▀ ▀   ▀ ▀▀▀▀      
-                                                 
-INFO:teledetection.sdk.oauth2:Waiting for authentication...
-```
+![](demo.gif)
 
 The user can either click on the link (`https://auth.stac.teledetection...user_code=XXXX-YYYY`) or scan the QR-code to reach the SSO login page. They can then log in using their favorite identity provider (e.g. Data-Terra via OrcID).
 
