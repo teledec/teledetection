@@ -1,4 +1,4 @@
-# Get access to push data
+# Policies
 
 The *Maison de la Teledetection* STAC API is transactionnal: any user 
 can push STAC objects to the API. On the other end, the signing URLs 

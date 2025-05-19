@@ -31,16 +31,16 @@ plugins:
 
 nav:
 - Home: index.md
-- Credentials: credentials.md
+- Getting started: getting_started.md
+- Authentication: authentication.md
 - Examples:
   - Basic example: examples/basic.md
   - With rasterio: examples/processing_examples_rasterio.md
   - With pyotb: examples/processing_examples_pyotb.md
-- Upload:
-  - Create a STAC collection: sample.md
-  - Get push access: access.md
-  - Upload: upload.md
-  - Additional resources: additional_resources.md
+- Data producers:
+  - Create a collection: sample.md
+  - Policies: policies.md
+  - Publish: publish.md
 - Advanced use: advanced.md
 - Reference:
   - API reference: reference/

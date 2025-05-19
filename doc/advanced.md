@@ -1,19 +1,22 @@
 # Advanced use
 
-## Sign after the search
+## Sign inplace
 
 ```python
-# See search described in previous sections
 items = search.item_collection()
 item = items.items[0]
-item = teledetection.sign_inplace(item)
+teledetection.sign_inplace(item)
 print(item.assets)
 ```
 
-!!! Hint
+## Sign with copy
 
-    `item = teledetection.sign(item)` also works.
-
+```python
+items = search.item_collection()
+item = items.items[0]
+signed_item = teledetection.sign(item)
+print(signed_item.assets)
+```
 
 ## Get headers
 
@@ -27,57 +30,33 @@ headers = tld.get_headers()
 requests.get(..., headers=headers)
 ```
 
+## QGIS
 
-## Under the hood
+QGIS has a STAC browser plugin that can be used to access the MTD geospatial 
+data center.
 
-The principle is to retrieve the signed URLs and use them to open remote
-rasters in QGIS.
+Follow these steps:
 
-### Retrieve the signed URL
+1. Generate an API key using `tld` in command line interface: `tld apikey create "my key for QGIS"`, or [from your browser](https://gate.stac.teledetection.fr),
+2. Open QGIS,
+3. First step in QGIS is to set the API key in the QGIS authentication framework. 
+Go to `Preferences` > `Options` and select `Authentication` tab on the left panel.
+Note that you might need to set a general password for QGIS authentication framework, in case it's not already done.
+4. Click on `+`, on the top-right of the panel, select API header, set a name (e.g. *CDS MTD Auth*) and optionally a description.
+5. Use the `+` button on the top-right side of the table, to add the following keys/values:
 
-The following code does a STAC search and displays the assets URLs:
+    - key: access-key, *enter the access key generated in (1)*
+    - key: secret-key, *enter the secret key generated in (1)*
 
-```python
-from pystac_client import Client
-from teledetection import sign_inplace
+6. Now the next step in QGIS consist in installing the STAC plugin and add the MTD STAC endpoint. Click on *Extensions* > *Install/manage* and search and install the **STAC API Browser** plugin.
+7. Start the plugin, from the **STAC API Browser** shortcut icon (also available from *Internet* > *STAC API Browser*),
+8. In the *Connections* tab, click on *new*, then add the following:
 
-api = Client.open(
-    'https://api.stac.teledetection.fr', 
-    modifier=sign_inplace
-)
-res = api.search(
-    bbox=[4, 42.99, 5, 44.05], 
-    datetime=["2022-01-01", "2022-12-25"],
-    collections=["spot-6-7-drs"]
-)
-for item in res.items():
-    print(f"Links for {item.id}:")
-    print(item.assets['src_pan'].href)
-```
+    - name: `CDS MTD` or anything you want
+    - url: `https://qgis.stac.teledetection.fr`
+    - authentifaction: select the authentication method you named in the QGIS authentication framework in step (4), e.g. *CDS MTD Auth*
 
-Result has the following form: `https://minio-api-dinamis.apps.okd...?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...&X-Amz-Date=...&X-Amz-Expires=28800&X-Amz-SignedHeaders=host&X-Amz-Signature=...`
-
-### Bonus: Open COG files in QGIS
-
-To open one COG in QGIS, follow these steps:
-
-- Copy one link
-- In QGIS: *Layer* > *Add layer* > *Add raster layer*
-- In *Source type*, select *Protocol: HTTP(S), cloud, etc*
-- Paste the copied link in the *url* field
-
-You can then process the remote COGs as any raster with your favorite tool 
-from QGIS.
-
-!!! Warning
-
-    QGIS must be at least **3.18 (Firenze)** to open remote COG files
-
-!!! Hint
-
-    There is actually a simpler way to fetch our data using QGIS, check our [documentation](https://home-cdos.apps.okd.crocc.meso.umontpellier.fr/en/page/qgis/).
-
-
+9. You can now select the STAC provider in the list and use it !
 
 ## Environment variables
 

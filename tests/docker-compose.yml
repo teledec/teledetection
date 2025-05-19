@@ -3,7 +3,7 @@ services:
     container_name: tests
     environment:
       LOGLEVEL: INFO
-      SKIP_AUTH_LINK: OFF
+      SKIP_AUTH_LINK: ON
       INDENT_JSON: ON
       TLD_SIGNING_ENDPOINT: "https://signing-dev.stac.teledetection.fr"
     build:
