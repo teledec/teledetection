@@ -32,17 +32,23 @@ stages:
   allow_failure: false
 
 Tests with docker compose:
-  coverage: '/^TOTAL.+?(\d+\%)$/'
-  after_script:
-    - ls -lha
+  except: [tags]
+  script:
+    - if [ "${CI_COMMIT_REF_NAME}" != "main" ]; then export SKIP_AUTH_LINK=ON; fi
+    - docker compose up --abort-on-container-exit --exit-code-from tests
   artifacts:
     paths:
       - .coverage
+      - report.xml
+    when: always
     reports:
       junit: report.xml
 
+
 Code coverage:
+  except: [tags]
   stage: Static Analysis
+  coverage: '/^TOTAL.+?(\d+\%)$/'
   image: python:3.10-slim
   script:
     - ls -lha
@@ -52,12 +58,14 @@ Code coverage:
     - coverage report
     - coverage xml
     - coverage html
+    - ls -lha
   needs:
     - Tests with docker compose
   except: [main, tags]
   artifacts:
     paths:
       - htmlcov/
+      - coverage.xml
     when: always
     reports:
       coverage_report:
