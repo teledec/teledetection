@@ -95,10 +95,12 @@ def remote_col_test(expected_bbox):
 
     # Check that assets are accessible once signed
     for i in col.get_items():
-        assets = i.get_assets().values()
-        for asset in assets:
+        for asset_key, asset in i.get_assets().items():
             assert stac.asset_exists(asset.href)
             assert "?" not in asset.href, f"The asset URL looks signed: {asset.href}"
+            assert asset.media_type == pystac.MediaType.COG, (
+                f"wrong media_type for asset {i.id} [{asset_key}]"
+            )
             sign_inplace(asset)
             urllib.request.urlretrieve(asset.href, "/tmp/a.tif")
             assert raster.is_cog("/tmp/a.tif")

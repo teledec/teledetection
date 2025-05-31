@@ -330,6 +330,7 @@ class StacUploadTransactionsHandler(StacTransactionsHandler):
             if raster.is_raster(local_filename):
                 raster.apply_proj_extension(asset)
                 raster.apply_raster_extension(asset)
+                asset.media_type = pystac.MediaType.COG
 
             # Skip when target file exists and overwrite is not enabled
             if not self.assets_overwrite:
@@ -346,7 +347,6 @@ class StacUploadTransactionsHandler(StacTransactionsHandler):
                         orig_filename,
                         keep_cog_dir=self.keep_cog_dir,
                     )
-
                     cogconv = True
 
             # Upload file
