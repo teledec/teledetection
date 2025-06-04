@@ -28,8 +28,8 @@ You can add an optional description to the new key:
 tld apikey register "This is my new key 1234"
 ```
 
-Typically on linux the generated API key will be stored in 
-`/home/username/.config/teledetection_auth/.apikey`.
+Typically on linux the generated API key will be stored in
+`/home/username/.config/teledetection/.apikey`.
 Optionally you can override the parent directory setting `TLD_SETTING_DIR`.
 
 Just follow the instructions to log in a single time, then the API key can be 

@@ -5,7 +5,7 @@ To process remote COG files, the following software must be up-to-date:
 | Software | Minimum version |
 |----------|-----------------|
 | GDAL     | 3.4.1           |
-| OTB      | 8.1.2           |
+| OTB      | 9.0.0           |
 | PyOTB    | 1.5.4           |
 
 All examples begin with importing `pystac_client` and `teledetection` and 
@@ -45,6 +45,10 @@ application to mosaic all XS channels.
 ```python
 urls = [f"/vsicurl/{r.assets['src_xs'].href}" for r in res.items()]
 ```
+
+!!! Note
+
+    Appending "/vsicurl" isn't required when using pyotb >= 2.0
 
 Then we build our image processing pipeline with pyotb:
 
