@@ -17,7 +17,7 @@
 
 </p>
 
-**teledetection** enables to use the STAC based geospatial data infrastructure 
+**teledetection** enables to use the [STAC based geospatial data infrastructure](https://www.stac.teledetection.fr) 
 of *la Maison de la Teledetection*.
 
 For more information read the [documentation](https://teledetection.readthedocs.io).

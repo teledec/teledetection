@@ -17,5 +17,5 @@
 Python package for interacting with the geospatial data infrastructure of 
 [*la Maison de la Teledetection*](https://www.teledetection.fr/index.php/en/) (*MTD*):
 
-- Access catalogs based on the MTD STAC infrastructure *(URLs provided by our STAC URLs are not signed, hence not accessible)*,
-- Publish local STAC objects and transfer files on the MTD STAC infrastructure. 
+- Authentify for download access [MTD STAC infrastructure](https://www.stac.teledetection.fr) catalogs,
+- Publish local STAC objects and transfer files on the [MTD STAC infrastructure](https://www.stac.teledetection.fr). 
