@@ -68,11 +68,11 @@ def _misc():
 
     def test_userinfo():
         """Test userinfo method."""
-        log.info("User infos: %s", teledetection.get_userinfo())
+        assert teledetection.get_userinfo()
 
     def test_username():
         """Test userinfo method."""
-        log.info("Username: %s", teledetection.get_username())
+        assert teledetection.get_username()
 
     test_userinfo()
     test_username()
