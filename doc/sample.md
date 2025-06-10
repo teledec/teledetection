@@ -229,5 +229,5 @@ And voila !
 
 - [This tutorial](https://pystac.readthedocs.io/en/stable/tutorials/how-to-create-stac-catalogs.html) explains extensively how to create a STAC collection from local raster files,
 - `pystac` [tutorials](https://pystac.readthedocs.io/en/stable/tutorials.html),
-- the [test file](https://forgemia.inra.fr/cdos-pub/teledetection/-/blob/main/tests/all.py) 
+- the [test file](https://forge.inrae.fr/teledec/teledetection/-/blob/main/tests/test_upload.py) 
 of `teledetection`.

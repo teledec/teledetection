@@ -1,5 +1,5 @@
 include:
-  - project: "cdos-pub/pycode-quality"
+  - project: "teledec/pycode-quality"
     ref: "main"
     file:
       - ".gitlab/ci/static-analysis.yml"
@@ -43,7 +43,6 @@ Tests with docker compose:
     when: always
     reports:
       junit: report.xml
-
 
 Code coverage:
   except: [tags]

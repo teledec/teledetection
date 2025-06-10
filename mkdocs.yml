@@ -53,7 +53,7 @@ extra:
     tabs: true
   social:
     - icon: fontawesome/brands/gitlab
-      link: https://forgemia.inra.fr/cdos-pub/teledetection
+      link: https://forge.inrae.fr/teledec/teledetection
 
 markdown_extensions:
   - attr_list

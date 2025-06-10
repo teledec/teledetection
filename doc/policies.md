@@ -7,7 +7,7 @@ API allows to upload files to the servers.
 To be able to push STAC objects and files, a policy must be defined for 
 the user to allow the operations on the `collections` (for STAC) and 
 `storages` (for files) resources, in 
-[this repository](https://forgemia.inra.fr/cdos-pub/admin/cdos-ops).
+[this repository](https://forge.inrae.fr/teledec/gdc-policies).
 To request the required permissions, the user can perform a 
 [merge request](https://docs.gitlab.com/ee/user/project/merge_requests/) 
 , to modify the `policies.yaml` file of the repository.
