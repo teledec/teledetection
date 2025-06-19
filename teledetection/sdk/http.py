@@ -9,8 +9,8 @@ from .oauth2 import OAuth2Session, retrieve_token_endpoint
 from .model import ApiKey
 from .settings import ENV
 
-
 log = get_logger_for(__name__)
+TIMEOUT = ENV.tld_request_timeout
 
 
 class BareConnectionMethod(BaseModel):
@@ -38,7 +38,7 @@ class OAuth2ConnectionMethod(BareConnectionMethod):
         openapi_url = retrieve_token_endpoint().replace("/token", "/userinfo")
         return (
             create_session()
-            .get(openapi_url, timeout=10, headers=self.get_headers())
+            .get(openapi_url, timeout=TIMEOUT, headers=self.get_headers())
             .json()
         )
 
@@ -56,10 +56,10 @@ class ApiKeyConnectionMethod(BareConnectionMethod):
 class HTTPSession:
     """HTTP session class."""
 
-    def __init__(self, timeout=10):
+    def __init__(self):
         """Initialize the HTTP session."""
         self.session = create_session()
-        self.timeout = timeout
+        self.timeout = TIMEOUT
         self.headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -94,7 +94,7 @@ class HTTPSession:
         url = f"{method.endpoint}{route}"
         headers = {**self.headers, **method.get_headers()}
         log.debug("POST to %s", url)
-        response = self.session.post(url, json=params, headers=headers, timeout=10)
+        response = self.session.post(url, json=params, headers=headers, timeout=TIMEOUT)
         try:
             response.raise_for_status()
         except Exception as e:

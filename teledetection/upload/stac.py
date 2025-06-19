@@ -16,6 +16,7 @@ from requests.adapters import HTTPAdapter, Retry
 from pystac import Collection, Item, ItemCollection
 from rich.pretty import pretty_repr
 
+from teledetection.sdk.settings import ENV
 from teledetection.sdk.logger import get_logger_for
 from teledetection.sdk.http import get_headers
 from teledetection.sdk.signing import sign, sign_inplace
@@ -23,6 +24,7 @@ from .transfer import push
 from . import raster
 
 logger = get_logger_for(__name__)
+TIMEOUT = ENV.tld_request_timeout
 
 DEFAULT_STAC_EP = "https://api.stac.teledetection.fr"
 DEFAULT_S3_EP = "https://s3-data.meso.umontpellier.fr"
@@ -97,7 +99,7 @@ def post_or_put(url: str, data: dict):
     headers = get_headers()
     sess = create_session()
 
-    resp = sess.post(url, json=data, headers=headers, timeout=10)
+    resp = sess.post(url, json=data, headers=headers, timeout=TIMEOUT)
 
     if resp.status_code == 409:
         # Exists, so update
@@ -106,7 +108,7 @@ def post_or_put(url: str, data: dict):
             f"{url}/{data['id']}",
             json=data,
             headers=headers,
-            timeout=10,
+            timeout=TIMEOUT,
         )
         # Unchanged may throw a 404
         if not resp.status_code == 404:
@@ -210,7 +212,7 @@ class StacTransactionsHandler:
         resp = requests.delete(
             url,
             headers=get_headers(),
-            timeout=5,
+            timeout=TIMEOUT,
         )
         if resp.status_code != 200:
             logger.warning("Deletion failed (%s)", resp.text)

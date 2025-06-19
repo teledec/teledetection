@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     tld_config_dir: str = ""
     tld_access_key: str = ""
     tld_secret_key: str = ""
+    tld_request_timeout: int = 30
     tld_retry_total: PositiveInt = 10
     tld_retry_backoff_factor: PositiveFloat = 0.8
     tld_disable_auth: bool = False

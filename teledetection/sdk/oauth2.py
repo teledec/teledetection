@@ -13,6 +13,7 @@ from .model import JWT, DeviceGrantResponse
 from .settings import ENV
 
 log = get_logger_for(__name__)
+TIMEOUT = ENV.tld_request_timeout
 
 
 def retrieve_token_endpoint():
@@ -20,10 +21,7 @@ def retrieve_token_endpoint():
     openapi_url = ENV.tld_signing_endpoint + "openapi.json"
     log.debug("Fetching OAuth2 endpoint from openapi url %s", openapi_url)
     _session = create_session()
-    res = _session.get(
-        openapi_url,
-        timeout=10,
-    )
+    res = _session.get(openapi_url, timeout=TIMEOUT)
     res.raise_for_status()
     data = res.json()
     return data["components"]["securitySchemes"]["OAuth2PasswordBearer"]["flows"][
@@ -80,7 +78,7 @@ class GrantMethodBase:
             self.get_token_endpoint(),
             headers=self.headers,
             data=data,
-            timeout=10,
+            timeout=TIMEOUT,
         )
         if ret.status_code == 200:
             log.debug(ret.text)
@@ -103,7 +101,7 @@ class DeviceGrant(GrantMethodBase):
             device_endpoint,
             headers=self.headers,
             data=self.data_base,
-            timeout=10,
+            timeout=TIMEOUT,
         )
         if ret.status_code == 200:
             response = DeviceGrantResponse(**ret.json())
@@ -134,7 +132,7 @@ class DeviceGrant(GrantMethodBase):
                     self.get_token_endpoint(),
                     headers=self.headers,
                     data=data,
-                    timeout=10,
+                    timeout=TIMEOUT,
                 )
                 elapsed = time.time() - start
                 log.debug(
