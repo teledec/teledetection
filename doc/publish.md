@@ -33,13 +33,11 @@ For more details, see [this page](cli-ref.md).
 Another way is to use the python API:
 
 ```python
-from teledetection.stac import TransactionsHandler
+from teledetection.upload.stac import StacUploadTransactionsHandler
 
-handler = TransactionsHandler(
-    stac_endpoint="https://api.stac.teledetection.fr",
-    storage_endpoint="https://s3-data.meso.umontpellier.fr",
+handler = StacUploadTransactionsHandler(
     storage_bucket="sm1-gdc/some-path",
-    assets_overwrite=True
+    # Values can be customized
 )
 handler.load_and_publish("/tmp/collection.json")
 ```

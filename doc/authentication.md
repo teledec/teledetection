@@ -30,7 +30,7 @@ tld apikey register "This is my new key 1234"
 
 Typically on linux the generated API key will be stored in
 `/home/username/.config/teledetection/.apikey`.
-Optionally you can override the parent directory setting `TLD_SETTING_DIR`.
+Optionally you can override the parent directory setting `TLD_CONFIG_DIR`.
 
 Just follow the instructions to log in a single time, then the API key can be 
 used forever on your local computer.

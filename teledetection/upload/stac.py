@@ -191,8 +191,9 @@ def get_col_items(col: Collection) -> List[Item]:
 class StacTransactionsHandler:
     """Handle STAC and storage transactions."""
 
-    stac_endpoint: str
-    sign: bool
+    stac_endpoint: str = DEFAULT_STAC_EP
+    sign: bool = False
+    """Sign URLs when fetching remote items."""
 
     @property
     def client(self):
@@ -292,9 +293,10 @@ class StacTransactionsHandler:
 class StacUploadTransactionsHandler(StacTransactionsHandler):
     """Handle STAC and storage transactions."""
 
-    storage_endpoint: str
-    storage_bucket: str
-    assets_overwrite: bool
+    storage_endpoint: str = DEFAULT_S3_EP
+    storage_bucket: str = DEFAULT_S3_STORAGE
+    assets_overwrite: bool = False
+    """Overwrite assets on S3 if already existing."""
     keep_cog_dir: str = ""
 
     def publish_item_and_push_assets(self, item: Item, assets_root_dir: str):
