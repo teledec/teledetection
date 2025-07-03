@@ -5,6 +5,7 @@ import io
 import time
 from abc import abstractmethod
 from typing import Dict
+from urllib.parse import urljoin
 import qrcode
 
 from .logger import get_logger_for  # type: ignore
@@ -18,7 +19,7 @@ TIMEOUT = ENV.tld_request_timeout
 
 def retrieve_token_endpoint():
     """Retrieve the token endpoint from the s3 signing endpoint."""
-    openapi_url = ENV.tld_signing_endpoint + "openapi.json"
+    openapi_url = urljoin(ENV.tld_signing_endpoint, "openapi.json")
     log.debug("Fetching OAuth2 endpoint from openapi url %s", openapi_url)
     _session = create_session()
     res = _session.get(openapi_url, timeout=TIMEOUT)

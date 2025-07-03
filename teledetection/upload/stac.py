@@ -318,7 +318,7 @@ class StacUploadTransactionsHandler(StacTransactionsHandler):
             local_filename = asset.href
             logger.debug("Local file: %s", local_filename)
 
-            file_relative_path = local_filename.replace(assets_root_dir, "")
+            file_relative_path = os.path.relpath(local_filename, assets_root_dir)
             target_url = urljoin(tgt_root_url, file_relative_path)
 
             # Check that url part after storage bucket is compliant
