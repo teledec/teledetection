@@ -88,7 +88,7 @@ class HTTPSession:
 
         # OAuth2 method
         else:
-            self._method = OAuth2ConnectionMethod()
+            self._method = OAuth2ConnectionMethod(endpoint=ENV.tld_signing_endpoint)
 
     def post(self, route: str, params: Dict):
         """Perform a POST request."""
