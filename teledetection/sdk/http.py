@@ -82,7 +82,9 @@ class HTTPSession:
 
         # API key method
         elif api_key := ApiKey.grab():
-            self._method = ApiKeyConnectionMethod(api_key=api_key)
+            self._method = ApiKeyConnectionMethod(
+                endpoint=ENV.tld_signing_endpoint, api_key=api_key
+            )
 
         # OAuth2 method
         else:
