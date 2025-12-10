@@ -34,7 +34,7 @@ STAC_ENDPOINT = "https://api-dev.stac.teledetection.fr"
 DEFAULT_COL_HREF = "http://hello.fr/collections/collection-for-tests"
 IMAGE_HREF = (
     "https://gitlab.orfeo-toolbox.org/orfeotoolbox/"
-    "otb/-/raw/develop/Data/Input/Capitole_Rasterization.tif"
+    "otb/-/raw/8.0.0/Data/Input/Capitole_Rasterization.tif"
 )
 COL_ID = "test-collection-for-upload"
 items_ids = ["item_1", "item_2"]

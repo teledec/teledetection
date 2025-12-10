@@ -6,10 +6,6 @@ include:
       - ".gitlab/ci/doc.yml"
       - ".gitlab/ci/docker-compose-tests.yml"
       - ".gitlab/ci/pip.yml"
-
-default:
-  tags:
-    - armageddon
    
 variables:
   PYTHON_IMG: python:3.12-slim

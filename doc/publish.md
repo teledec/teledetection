@@ -8,21 +8,21 @@ pip install teledetection[upload]
 
 ## Command line interface (CLI)
 
-In the `teledetection` CLI, the `--storage_bucket` argument concatenates the actual bucket and the path prefix.
+In the `teledetection` CLI, aka `tld`, the `--storage_bucket` argument concatenates the actual bucket and the path prefix.
 
 For instance if Jacques wants to upload a collection in `sm1-gdc/some-path`, he will have to call:
 
 ```commandLine
-teledetection publish collection.json --storage_bucket sm1-gdc/some-path
+tld publish collection.json --storage_bucket sm1-gdc/some-path
 ```
 
 In case he has an item, or an item collection, he can use the same command:
 
 ```commandLine
-teledetection publish item.json --storage_bucket sm1-gdc/some-path
+tld publish item.json --storage_bucket sm1-gdc/some-path
 ```
 ```commandLine
-teledetection publish item-collection.json --storage_bucket sm1-gdc/some-path
+tld publish item-collection.json --storage_bucket sm1-gdc/some-path
 ```
 
 For more details, see [this page](cli-ref.md).

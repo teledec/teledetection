@@ -17,8 +17,8 @@ for path in sorted(Path("teledetection").rglob("*.py")):  #
         continue
 
     with mkdocs_gen_files.open(full_doc_path, "w") as fd:  #
-        IDENTIFIER = ".".join(parts)  #
-        print("::: " + IDENTIFIER)
-        print("::: " + IDENTIFIER, file=fd)  #
+        identifier = ".".join(parts)  #
+        print("::: " + identifier)
+        print("::: " + identifier, file=fd)  #
 
     mkdocs_gen_files.set_edit_path(full_doc_path, path)
