@@ -10,6 +10,7 @@ from datetime import datetime
 import pystac
 import pystac_client
 import pytest
+import rasterio  # type:ignore
 import requests
 
 from utils import run_cli_cmd
@@ -40,7 +41,7 @@ COL_ID = "test-collection-for-upload"
 items_ids = ["item_1", "item_2"]
 RASTER_FILE1 = "/tmp/raster1.tif"
 RASTER_FILE2 = "/tmp/folder1/raster2.tif"
-RASTER_FILE3 = "/tmp/folder/raster3.tif"
+RASTER_FILE3 = "/tmp/folder/raster3.vrt"
 STORAGE_BUCKET = "sm1-gdc-tests"
 
 handler = stac.StacUploadTransactionsHandler(
@@ -57,7 +58,7 @@ with open(RASTER_FILE1, "wb") as f:
 os.makedirs(os.path.dirname(RASTER_FILE2), exist_ok=True)
 shutil.copyfile(RASTER_FILE1, RASTER_FILE2)
 os.makedirs(os.path.dirname(RASTER_FILE3), exist_ok=True)
-shutil.copyfile(RASTER_FILE1, RASTER_FILE3)
+shutil.copyfile("tests/raster3.vrt", RASTER_FILE3)
 
 COL_BBOX = [0.0, 0.0, 0.0, 0.0]
 BBOX_ALL = [
@@ -74,6 +75,18 @@ COORDS1 = [
     [4.032730583418401, 43.547450099338604],
 ]
 COORDS2 = [[coord + 5 for coord in coords] for coords in COORDS1]
+
+
+def test_roi_read_vrt():
+    """Check that rasterio reads the .vrt file."""
+    # !!!
+    # If this test fails, double-check that this is in the .vrt file:
+    # <SourceFilename relativeToVRT="0">/tmp/folder1/raster2.tif</SourceFilename>
+    # with the same path as RASTER_FILE2
+    # !!!
+    with rasterio.open(RASTER_FILE3) as raster_vrt:
+        print(raster_vrt.crs)
+        print(raster_vrt.read(1))
 
 
 def clear():

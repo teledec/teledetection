@@ -1,6 +1,7 @@
 """Raster analysis and parsing module."""
 
 import os
+import pathlib
 from datetime import datetime
 from rasterio import warp, features, open as ropen, crs, errors  # type:ignore
 from rio_stac.stac import bbox_to_geom, get_projection_info  # type:ignore
@@ -117,10 +118,7 @@ class Info:
             return md, stats
 
 
-def raster2cog(
-    src_raster: str,
-    dst_raster: str,
-):
+def raster2cog(src_raster: str, dst_raster: str):
     """Convert a raster to Cloud Optimized Geotiff.
 
     Args:
@@ -143,11 +141,11 @@ def raster2cog(
         "GDAL_TIFF_OVR_BLOCKSIZE": "512",
     }
 
-    # Change output COG filename extension if not .tif
-    if not dst_raster.lower().endswith(".tif"):
-        pre, _ = os.path.splitext(dst_raster)
-        dst_raster = f"{pre}.tif"
+    assert dst_raster.lower().endswith(".tif"), (
+        "Destination COG file extension is not .tif"
+    )
 
+    logger.debug("Converting %s to COG file %s", src_raster, dst_raster)
     cog_translate(
         source=src_raster,
         dst_path=dst_raster,
@@ -190,10 +188,7 @@ def is_raster(src_filepath: str) -> bool:
     return False
 
 
-def convert_to_cog(
-    local_filename: str,
-    keep_cog_dir: str = "",
-) -> str:
+def convert_to_cog(local_filename: str, keep_cog_dir: str = "") -> str:
     """Convert raster to COG in a tmp directory.
 
     Args:
@@ -203,20 +198,19 @@ def convert_to_cog(
     Returns:
         file path of the converted raster
     """
-    if keep_cog_dir:
-        tmpcog = os.path.join(keep_cog_dir, os.path.basename(local_filename))
-        if not os.path.exists(keep_cog_dir):
-            os.makedirs(keep_cog_dir)
-    else:
-        tmpcog = os.path.join(
-            os.path.dirname(local_filename), "TMPCOG", os.path.basename(local_filename)
-        )
-        if not os.path.exists(os.path.dirname(tmpcog)):
-            os.makedirs(os.path.dirname(tmpcog))
-    if os.path.exists(tmpcog) and keep_cog_dir:
-        return tmpcog
-    raster2cog(local_filename, tmpcog)
-    return tmpcog
+    logger.debug(
+        "Input raster file: %s (keep COG dir = %s)", local_filename, keep_cog_dir
+    )
+    cog_dir = keep_cog_dir or os.path.join(os.path.dirname(local_filename), "TMPCOG")
+    logger.debug("Output directory for COG file: %s", cog_dir)
+    pathlib.Path(cog_dir).mkdir(parents=True, exist_ok=True)
+    cog_file = os.path.join(cog_dir, os.path.basename(local_filename))
+    cog_file, _ = os.path.splitext(cog_file)
+    cog_file += ".tif"
+    if is_raster(cog_file) and is_cog(cog_file) and keep_cog_dir:
+        return cog_file
+    raster2cog(local_filename, cog_file)
+    return cog_file
 
 
 def apply_proj_extension(asset: Asset):

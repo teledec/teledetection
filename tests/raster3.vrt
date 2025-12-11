@@ -1,0 +1,14 @@
+<VRTDataset rasterXSize="1100" rasterYSize="1100">
+  <SRS dataAxisToSRSAxisMapping="1,2">PROJCS["WGS 84 / UTM zone 31N",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",0],PARAMETER["central_meridian",3],PARAMETER["scale_factor",0.9996],PARAMETER["false_easting",500000],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH],AUTHORITY["EPSG","32631"]]</SRS>
+  <GeoTransform>  3.7414998055582098e+05,  5.9999999999999998e-01,  0.0000000000000000e+00,  4.8291839944383902e+06,  0.0000000000000000e+00, -5.9999999999999998e-01</GeoTransform>
+  <VRTRasterBand dataType="Byte" band="1">
+    <ColorInterp>Gray</ColorInterp>
+    <SimpleSource>
+      <SourceFilename relativeToVRT="0">/tmp/folder1/raster2.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="1100" RasterYSize="1100" DataType="Byte" BlockXSize="1100" BlockYSize="7" />
+      <SrcRect xOff="0" yOff="0" xSize="1100" ySize="1100" />
+      <DstRect xOff="0" yOff="0" xSize="1100" ySize="1100" />
+    </SimpleSource>
+  </VRTRasterBand>
+</VRTDataset>
