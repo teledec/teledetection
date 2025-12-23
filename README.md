@@ -26,3 +26,4 @@ For more information read the [documentation](https://teledetection.readthedocs.
 
 - remi cresson @ inrae
 - pablo boizeau @ ird
+
