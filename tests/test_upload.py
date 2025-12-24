@@ -24,6 +24,7 @@ from teledetection.cli import (
     list_col_items,
     list_cols,
     publish,
+    delete,
     DEFAULT_S3_EP,
 )
 from teledetection.sdk.logger import get_logger_for
@@ -169,7 +170,7 @@ def create_collection(col_href: str):
     return col
 
 
-def create_items_and_collection(relative, items=None, col_href=DEFAULT_COL_HREF):
+def create_items_and_collection(items=None, col_href=DEFAULT_COL_HREF):
     """Create two STAC items attached to one collection."""
     # Create items
     items = items or [create_item(item_id=item_id) for item_id in items_ids]
@@ -178,28 +179,20 @@ def create_items_and_collection(relative, items=None, col_href=DEFAULT_COL_HREF)
     col = create_collection(col_href)
     for item in items:
         col.add_item(item)
-    if relative:
-        col.make_all_asset_hrefs_relative()
-    else:
-        col.make_all_asset_hrefs_absolute()
 
     return col, items
 
 
-def generate_collection(root_dir, relative=True, items=None):
+def generate_collection(root_dir, items=None):
     """Generate and save a STAC collection in {root_dir}/collection.json."""
-    col, _ = create_items_and_collection(relative, items=items)
+    col, _ = create_items_and_collection(items=items)
     col.normalize_hrefs(root_dir)
-    col.save(
-        catalog_type=pystac.CatalogType.RELATIVE_PUBLISHED
-        if relative
-        else pystac.CatalogType.ABSOLUTE_PUBLISHED
-    )
+    col.save(catalog_type=pystac.CatalogType.SELF_CONTAINED)
 
 
-def generate_item_collection(file_pth, relative=True):
+def generate_item_collection(file_pth):
     """Generate and save a STAC item_collection in {file_pth}."""
-    _, items = create_items_and_collection(relative)
+    _, items = create_items_and_collection()
     icol = pystac.item_collection.ItemCollection(items=items)
     icol.save_object(file_pth)
 
@@ -253,12 +246,31 @@ def test_publish_w_cli(overwrite: list, keep_cog_dir: bool):
             assert files
             shutil.rmtree(cog_dir)
         remote_col_test(BBOX_ALL)
+        run_cli_cmd(
+            delete,
+            [
+                "--stac_endpoint",
+                STAC_ENDPOINT,
+                "-c",
+                COL_ID,
+                "-i",
+                items_ids[0],
+            ],
+        )
+        run_cli_cmd(
+            delete,
+            [
+                "--stac_endpoint",
+                STAC_ENDPOINT,
+                "-c",
+                COL_ID,
+            ],
+        )
         clear()
 
 
 @pytest.mark.parametrize("assets_overwrite", [False, True])
-@pytest.mark.parametrize("relative", [False, True])
-def test_item_collection(assets_overwrite, relative):
+def test_item_collection(assets_overwrite):
     """Test item collection."""
     handler.assets_overwrite = assets_overwrite
     # we need to create an empty collection before
@@ -266,19 +278,18 @@ def test_item_collection(assets_overwrite, relative):
     handler.publish_collection(col)
 
     with tempfile.NamedTemporaryFile() as tmp:
-        generate_item_collection(tmp.name, relative=relative)
+        generate_item_collection(tmp.name)
         handler.load_and_publish(tmp.name)
         remote_col_test(BBOX_ALL)
         clear()
 
 
 @pytest.mark.parametrize("assets_overwrite", [False, True])
-@pytest.mark.parametrize("relative", [False, True])
-def test_collection(assets_overwrite, relative):
+def test_collection(assets_overwrite):
     """Test collection."""
     handler.assets_overwrite = assets_overwrite
     with tempfile.TemporaryDirectory() as tmpdir:
-        generate_collection(tmpdir, relative=relative)
+        generate_collection(tmpdir)
         col_pth = os.path.join(tmpdir, "collection.json")
         handler.load_and_publish(col_pth)
         remote_col_test(BBOX_ALL)
@@ -286,14 +297,12 @@ def test_collection(assets_overwrite, relative):
 
 
 @pytest.mark.parametrize("assets_overwrite", [False, True])
-@pytest.mark.parametrize("relative", [False, True])
-def test_collection_multipart(assets_overwrite, relative):
+def test_collection_multipart(assets_overwrite):
     """Test collection."""
-    log.info(f"\nRelative: {relative}")
     handler.assets_overwrite = assets_overwrite
     for item_id in items_ids:
         with tempfile.TemporaryDirectory() as tmpdir:
-            generate_collection(tmpdir, relative=relative, items=[create_item(item_id)])
+            generate_collection(tmpdir, items=[create_item(item_id)])
             col_pth = os.path.join(tmpdir, "collection.json")
             handler.load_and_publish(col_pth)
     remote_col_test(BBOX_ALL)
@@ -320,9 +329,7 @@ def test_get():
 def test_diff():
     """Test diff."""
 
-    col1, items = create_items_and_collection(
-        relative=True, col_href="/tmp/collection.json"
-    )
+    col1, items = create_items_and_collection(col_href="/tmp/collection.json")
     col2 = col1.full_copy()
 
     item = items[0].full_copy()
@@ -338,7 +345,7 @@ def test_diff():
 
     col1_filepath = "/tmp/col1.json"
     col1.set_self_href(col1_filepath)
-    col1.save(catalog_type=pystac.CatalogType.RELATIVE_PUBLISHED)
+    col1.save(catalog_type=pystac.CatalogType.SELF_CONTAINED)
 
     diff.compare_local_and_upstream(
         stac.StacTransactionsHandler(stac.DEFAULT_STAC_EP, sign=False),

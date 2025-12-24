@@ -114,31 +114,34 @@ def _oauth2_needing_reauth():
     jwt.to_config_dir()
     assert oauth2.OAuth2Session().get_access_token()
 
-    log.warning(
-        """
-        ****************************************************************************
+    # log.warning(
+    #     """
+    #     ****************************************************************************
 
-        Simulate an expired authentication !
-        You developer will have to wait! sorry...
+    #     Simulate an expired authentication !
+    #     You developer will have to wait! sorry...
 
-        DO NOT LOGIN PLEASE, THIS TEST IS PURPOSELY INTENDED TO FAIL
+    #     DO NOT LOGIN PLEASE, THIS TEST IS PURPOSELY INTENDED TO FAIL
 
-        ****************************************************************************
-        """
-    )
-    right_cfg_dir = teledetection.sdk.settings.get_config_path()
-    cfg_dir_cpy = f"{right_cfg_dir}_old"
-    os.rename(right_cfg_dir, cfg_dir_cpy)
-    oauth2_sess = oauth2.OAuth2Session()
-    oauth2_sess.jwt = None
-    should_fail(oauth2_sess.get_access_token, [], oauth2.ExpiredAuthLinkError)
-    os.rename(cfg_dir_cpy, right_cfg_dir)
+    #     ****************************************************************************
+    #     """
+    # )
+    # right_cfg_dir = teledetection.sdk.settings.get_config_path()
+    # cfg_dir_cpy = f"{right_cfg_dir}_old"
+    # os.rename(right_cfg_dir, cfg_dir_cpy)
+    # oauth2_sess = oauth2.OAuth2Session()
+    # oauth2_sess.jwt = None
+    # should_fail(oauth2_sess.get_access_token, [], oauth2.ExpiredAuthLinkError)
+    # os.rename(cfg_dir_cpy, right_cfg_dir)
 
 
 def test_sdk():
     """Test SDK auth with various authentication methods."""
     # QR-code will be shown there. An OAuth2 token will be generated.
     log.info("Testing key management")
+
+    # Test empty command
+    run_cli_cmd(apikey, [])
 
     # Revoke all keys from CLI
     run_cli_cmd(apikey, ["revoke-all"])

@@ -11,7 +11,7 @@ dependencies = [
     "setuptools>=61.2",
     "click>=7.1",
     "pydantic>=1.7.3, <3.0.0",
-    "pystac>=1.0.0, <1.14.2",
+    "pystac>=1.0.0, <2.0.0",
     "pystac-client>=0.2.0",
     "requests>=2.25.1",
     "packaging",
