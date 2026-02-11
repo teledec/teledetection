@@ -5,7 +5,7 @@ import re
 import shutil
 import json
 from dataclasses import dataclass
-from typing import List, cast
+from typing import List, cast, Optional
 from urllib.parse import urljoin
 
 import pystac
@@ -143,14 +143,17 @@ def load_stac_obj(obj_pth: str) -> Collection | ItemCollection | Item:
     raise STACObjectUnresolved(f"Cannot resolve STAC object ({obj_pth})")
 
 
-def get_assets_root_dir(items: List[Item]) -> str:
+def get_assets_root_dir(
+    items: List[Item], collection: Optional[Collection] = None
+) -> str:
     """Get the common prefix of all items assets paths.
 
     If the the common prefix is not a folder (/tmp/test1/a.tif, /tmp/test2/b.tif), returns /tmp.
     """
-    prefix = os.path.commonpath(
-        [asset.href for item in items for asset in item.assets.values()]
-    )
+    hrefs = [asset.href for item in items for asset in item.assets.values()]
+    if collection:
+        hrefs += [asset.href for asset in collection.assets.values()]
+    prefix = os.path.commonpath(hrefs)
     if os.path.isdir(prefix):
         return prefix + "/"
     return os.path.dirname(prefix) + "/"
@@ -360,70 +363,14 @@ class StacUploadTransactionsHandler(StacTransactionsHandler):
             item: Stac item to publish
             assets_root_dir: Common path to all files, defined as assets root dir
         """
-        tgt_root_url = urljoin(
-            self.storage_endpoint, f"{self.storage_bucket}/{item.collection_id}/"
-        )
-
         logger.debug("Itemid = %s", item.id)
 
         _check_naming_is_compliant(self.storage_bucket)
         _check_naming_is_compliant(item.id)
+
         for _, asset in item.assets.items():
-            local_filename = asset.href
-            logger.debug("Local file: %s", local_filename)
-
-            file_relative_path = os.path.relpath(local_filename, assets_root_dir)
-            target_url = urljoin(tgt_root_url, file_relative_path)
-
-            # Check that url part after storage bucket is compliant
-            _check_naming_is_compliant(
-                file_relative_path,
-                allow_dot=True,
-                allow_slash=True,
-            )
-            logger.debug("Target file: %s", target_url)
-
-            # Add raster metadata to asset
-            logger.debug("Updating assets metadata for rasters...")
-            if raster.is_raster(local_filename):
-                raster.apply_proj_extension(asset)
-                raster.apply_raster_extension(asset)
-                asset.media_type = pystac.MediaType.COG
-
-            # Skip when target file exists and overwrite is not enabled
-            if not self.assets_overwrite:
-                if asset_exists(target_url):
-                    asset.href = target_url
-                    continue
-
-            # Check is_cog, converts if not
-            cogconv = False
-            if raster.is_raster(local_filename):
-                if not raster.is_cog(local_filename):
-                    orig_filename = local_filename
-                    local_filename = raster.convert_to_cog(
-                        orig_filename,
-                        keep_cog_dir=self.keep_cog_dir,
-                    )
-                    cogconv = True
-
-            # Upload file
-            logger.info("Uploading %s to %s...", local_filename, target_url)
-            try:
-                push(local_filename=local_filename, target_url=target_url)
-            except Exception as e:
-                logger.error(e)
-                raise e
-
-            # Update assets hrefs
-            logger.debug("Updating assets HREFs ...")
-            asset.href = target_url
-
-            # Delete temp cog
-            if cogconv and not self.keep_cog_dir:
-                logger.debug("Deleting temporary COG ...")
-                shutil.rmtree(os.path.dirname(local_filename))
-                local_filename = orig_filename
+            assert item.collection_id
+            self.push_asset(asset, assets_root_dir, item.collection_id)
 
         # Add published metadata to item
         logger.debug("Updating item metadata ...")
@@ -452,11 +399,84 @@ class StacUploadTransactionsHandler(StacTransactionsHandler):
             )
         self.update_collection_extent(col_id=col_id)
 
+    def push_asset(self, asset: pystac.Asset, assets_root_dir: str, col_id: str):
+        """Push an asset to the storage."""
+        tgt_root_url = urljoin(
+            self.storage_endpoint, f"{self.storage_bucket}/{col_id}/"
+        )
+        local_filename = asset.href
+        logger.debug("Local file: %s", local_filename)
+
+        file_relative_path = os.path.relpath(local_filename, assets_root_dir)
+        target_url = urljoin(tgt_root_url, file_relative_path)
+
+        # Check that url part after storage bucket is compliant
+        _check_naming_is_compliant(
+            file_relative_path,
+            allow_dot=True,
+            allow_slash=True,
+        )
+        logger.debug("Target file: %s", target_url)
+
+        # Add raster metadata to asset
+        logger.debug("Updating assets metadata for rasters...")
+        if raster.is_raster(local_filename):
+            raster.apply_proj_extension(asset)
+            raster.apply_raster_extension(asset)
+            asset.media_type = pystac.MediaType.COG
+
+        # Skip when target file exists and overwrite is not enabled
+        if not self.assets_overwrite:
+            if asset_exists(target_url):
+                asset.href = target_url
+                return
+
+        # Check is_cog, converts if not
+        cogconv = False
+        if raster.is_raster(local_filename):
+            if not raster.is_cog(local_filename):
+                orig_filename = local_filename
+                local_filename = raster.convert_to_cog(
+                    orig_filename,
+                    keep_cog_dir=self.keep_cog_dir,
+                )
+                cogconv = True
+
+        # Upload file
+        logger.info("Uploading %s to %s...", local_filename, target_url)
+        try:
+            push(local_filename=local_filename, target_url=target_url)
+        except Exception as e:
+            logger.error(e)
+            raise e
+
+        # Update assets hrefs
+        logger.debug("Updating assets HREFs ...")
+        asset.href = target_url
+
+        # Delete temp cog
+        if cogconv and not self.keep_cog_dir:
+            logger.debug("Deleting temporary COG ...")
+            shutil.rmtree(os.path.dirname(local_filename))
+            local_filename = orig_filename
+
+    def publish_collection_and_push_assets(self, col: Collection):
+        """Publish a collection and push all its assets."""
+        logger.debug("Collection = %s", col.id)
+
+        _check_naming_is_compliant(self.storage_bucket)
+        _check_naming_is_compliant(col.id)
+        if len(col.assets) > 0:
+            assets_root_dir = get_assets_root_dir(items=[], collection=col)
+            for _, asset in col.assets.items():
+                self.push_asset(asset, assets_root_dir, col.id)
+        self.publish_collection(col=col)
+
     def publish_collection_with_items(self, col: Collection):
         """Publish a collection and all its items."""
         items = get_col_items(col=col)
         check_items_col_id(items)
-        self.publish_collection(col=col)
+        self.publish_collection_and_push_assets(col=col)
         self.publish_items_and_push_assets(items=items)
 
     def publish_item_collection(self, item_collection: ItemCollection):
