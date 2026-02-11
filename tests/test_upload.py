@@ -54,7 +54,7 @@ handler = stac.StacUploadTransactionsHandler(
 )
 
 with open(RASTER_FILE1, "wb") as f:
-    r = requests.get(IMAGE_HREF, timeout=5)
+    r = requests.get(IMAGE_HREF, timeout=15)
     f.write(r.content)
 os.makedirs(os.path.dirname(RASTER_FILE2), exist_ok=True)
 shutil.copyfile(RASTER_FILE1, RASTER_FILE2)
@@ -97,20 +97,21 @@ def clear():
     handler.delete_item_or_col(col_id=COL_ID)
 
 
-def remote_col_test(expected_bbox):
+def remote_col_test(expected_bbox: list[float] | None):
     """Run tests on a remote collection."""
     api = pystac_client.Client.open(STAC_ENDPOINT)
     col = api.get_collection(COL_ID)
     extent = col.extent.spatial.bboxes
     assert len(extent) == 1
-    assert tuple(extent[0]) == tuple(expected_bbox), (
-        f"expected BBOX: {expected_bbox}, got {extent[0]}"
-    )
+    if expected_bbox:
+        assert tuple(extent[0]) == tuple(expected_bbox), (
+            f"expected BBOX: {expected_bbox}, got {extent[0]}"
+        )
 
     # Check that assets are accessible once signed
     for i in col.get_items():
         for asset_key, asset in i.get_assets().items():
-            assert stac.asset_exists(asset.href)
+            assert stac.asset_exists(asset.href), f"Asset {asset} doesn't exist"
             assert "?" not in asset.href, f"The asset URL looks signed: {asset.href}"
             assert asset.media_type == pystac.MediaType.COG, (
                 f"wrong media_type for asset {i.id} [{asset_key}]"
@@ -282,6 +283,27 @@ def test_item_collection(assets_overwrite):
         handler.load_and_publish(tmp.name)
         remote_col_test(BBOX_ALL)
         clear()
+
+
+def test_bulk_upsert():
+    """Test item collection."""
+    col = create_collection(DEFAULT_COL_HREF)
+    handler.publish_collection(col)
+    _, items = create_items_and_collection(col_href="/tmp/collection.json")
+    # Reuse assets already pushed before and push using bulk
+    for i in items:
+        for asset in i.assets.values():
+            asset.href = asset.href.replace(
+                "/tmp/",
+                "https://s3-data.meso.umontpellier.fr/sm1-gdc-tests/test-collection-for-upload/",
+            )
+            asset.media_type = (
+                "image/tiff; application=geotiff; profile=cloud-optimized"
+            )
+
+    handler.publish_bulk_items(items)
+    remote_col_test(None)
+    clear()
 
 
 @pytest.mark.parametrize("assets_overwrite", [False, True])

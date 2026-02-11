@@ -229,10 +229,12 @@ class StacTransactionsHandler:
         logger.info("Retrieve item %s from collection %s", item_id, col_id)
         col = self.client.get_collection(col_id)
         if not col:
-            raise ValueError(f"Collection {col_id} not found")
+            raise KeyError(f"Collection {col_id} not found")
         item = col.get_item(item_id)
         if not item:
-            raise ValueError(f"Item {item_id} (from collection {col_id}) not found")
+            raise UnconsistentCollectionIDs(
+                f"Item {item_id} (from collection {col_id}) not found"
+            )
         return item
 
     def publish_collection(self, col: Collection):
@@ -250,6 +252,58 @@ class StacTransactionsHandler:
             urljoin(self.stac_endpoint, f"collections/{col_id}/items"),
             item.to_dict(transform_hrefs=False),
         )
+
+    def publish_bulk_items(
+        self, items: List[Item], method: str = "upsert", chunk_size: int = 500
+    ):
+        """Publish multiple items at once.
+
+        Uses endpoint "/collections/{collection_id}/bulk_items" to publish chunks
+        of multiple items, in order to reduce the number of requests.
+
+        Args:
+            items: List of items to publish
+            method: "insert" or "upsert".
+                    When an item already exists:
+                        - if "insert", an error rises.
+                        - if "upsert", the item is updated.
+                    In both cases, the item is created if it does not exist.
+            chunk_size: maximum number of items per request.
+
+        Returns:
+            None
+
+        Notes:
+            `chunk_size` allows to limit the number of items per request in order to
+            respect the response timeout. Otherwise, it is possible to control the
+            timeout with the `TIMEOUT` environment variable or
+            `teledetection.sdk.settings.ENV.tld_request_timeout`.
+        """
+        for item in items:
+            _check_naming_is_compliant(item.id)
+        if len(set(item.collection_id for item in items)) > 1:
+            raise UnconsistentCollectionIDs(
+                "Collection ID must be the same for all items!"
+            )
+        if len(items) == 0:
+            return
+
+        col_id = items[0].collection_id
+        bulk_items = {
+            item.id: item.to_dict(transform_hrefs=False) for item in items[:chunk_size]
+        }
+        logger.info('Publishing %d items in collection "%s"', len(bulk_items), col_id)
+        post_or_put(
+            url=urljoin(self.stac_endpoint, f"collections/{col_id}/bulk_items"),
+            data={
+                "method": method,
+                "items": bulk_items,
+            },
+        )
+        logger.info(f"Published {len(bulk_items)} items")
+
+        if len(items) > chunk_size:
+            self.publish_bulk_items(items=items[chunk_size:])
 
     def update_collection_extent(self, col_id: str):
         """Update collection extent."""
