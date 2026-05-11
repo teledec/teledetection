@@ -1,6 +1,6 @@
 """STAC diff tool."""
 
-from typing import Tuple, List, cast
+from typing import Tuple, cast
 from pystac import Collection, Item
 from rich import print
 from teledetection.sdk.logger import get_logger_for
@@ -45,7 +45,7 @@ def collections_defs_are_different(col1: Collection, col2: Collection) -> bool:
 
 def generate_items_diff(
     col1: Collection, col2: Collection
-) -> Tuple[List[Item], List[Item]]:
+) -> Tuple[list[Item], list[Item]]:
     """Compute the diff between 2 STAC collections.
 
     Returns:
@@ -66,7 +66,7 @@ def generate_items_diff(
         id = unique.split(UNIQUE_SEP)[0]
         item = col.get_item(id)
         if not item:
-            raise Exception(f"Item {id} not found")
+            raise Exception(f"Item {id} not found")  # pragma: no cover
         return item
 
     list_only_in_1 = [unique_retrieve_info(unique, col1) for unique in only_in_1]

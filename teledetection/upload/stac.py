@@ -5,7 +5,7 @@ import re
 import shutil
 import json
 from dataclasses import dataclass
-from typing import List, cast, Optional
+from typing import cast, Optional
 from urllib.parse import urljoin
 
 import pystac
@@ -144,7 +144,7 @@ def load_stac_obj(obj_pth: str) -> Collection | ItemCollection | Item:
 
 
 def get_assets_root_dir(
-    items: List[Item], collection: Optional[Collection] = None
+    items: list[Item], collection: Optional[Collection] = None
 ) -> str:
     """Get the common prefix of all items assets paths.
 
@@ -159,7 +159,7 @@ def get_assets_root_dir(
     return os.path.dirname(prefix) + "/"
 
 
-def check_items_col_id(items: List[Item]):
+def check_items_col_id(items: list[Item]):
     """Check that items have the same col_id."""
     if len(set(item.collection_id for item in items)) > 1:
         raise UnconsistentCollectionIDs("Collection ID must be the same for all items!")
@@ -173,7 +173,7 @@ def get_col_href(col: Collection):
     return ""
 
 
-def get_col_items(col: Collection) -> List[Item]:
+def get_col_items(col: Collection) -> list[Item]:
     """Retrieve collection items."""
     col_href = get_col_href(col=col)
     return [
@@ -257,7 +257,7 @@ class StacTransactionsHandler:
         )
 
     def publish_bulk_items(
-        self, items: List[Item], method: str = "upsert", chunk_size: int = 500
+        self, items: list[Item], method: str = "upsert", chunk_size: int = 500
     ):
         """Publish multiple items at once.
 
@@ -370,16 +370,16 @@ class StacUploadTransactionsHandler(StacTransactionsHandler):
 
         for _, asset in item.assets.items():
             assert item.collection_id
-            self.push_asset(asset, assets_root_dir, item.collection_id)
+            self.push_asset_and_update_href(asset, assets_root_dir, item.collection_id)
 
         # Add published metadata to item
         logger.debug("Updating item metadata ...")
-        raster.apply_published_extension(item)
+        raster.apply_created_metadata(item)
 
         # Push item
         self.publish_item(item=item)
 
-    def publish_items_and_push_assets(self, items: List[Item]):
+    def publish_items_and_push_assets(self, items: list[Item]):
         """Publish items."""
         if not items:
             logger.info("No item to publish.")
@@ -399,8 +399,10 @@ class StacUploadTransactionsHandler(StacTransactionsHandler):
             )
         self.update_collection_extent(col_id=col_id)
 
-    def push_asset(self, asset: pystac.Asset, assets_root_dir: str, col_id: str):
-        """Push an asset to the storage."""
+    def push_asset_and_update_href(
+        self, asset: pystac.Asset, assets_root_dir: str, col_id: str
+    ):
+        """Push an asset to the storage and update href and media_type."""
         tgt_root_url = urljoin(
             self.storage_endpoint, f"{self.storage_bucket}/{col_id}/"
         )
@@ -416,7 +418,7 @@ class StacUploadTransactionsHandler(StacTransactionsHandler):
             allow_dot=True,
             allow_slash=True,
         )
-        logger.debug("Target file: %s", target_url)
+        logger.debug("Target file url: %s", target_url)
 
         # Add raster metadata to asset
         logger.debug("Updating assets metadata for rasters...")
@@ -469,7 +471,7 @@ class StacUploadTransactionsHandler(StacTransactionsHandler):
         if len(col.assets) > 0:
             assets_root_dir = get_assets_root_dir(items=[], collection=col)
             for _, asset in col.assets.items():
-                self.push_asset(asset, assets_root_dir, col.id)
+                self.push_asset_and_update_href(asset, assets_root_dir, col.id)
         self.publish_collection(col=col)
 
     def publish_collection_with_items(self, col: Collection):
@@ -492,7 +494,3 @@ class StacUploadTransactionsHandler(StacTransactionsHandler):
             self.publish_collection_with_items(col=obj)
         elif isinstance(obj, ItemCollection):
             self.publish_item_collection(item_collection=obj)
-        else:
-            raise TypeError(
-                f"Invalid type, must be ItemCollection or Collection (got {type(obj)})"
-            )

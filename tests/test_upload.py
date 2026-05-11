@@ -1,6 +1,7 @@
 """Test file."""
 
 import os
+import sys
 import glob
 import shutil
 import tempfile
@@ -109,7 +110,9 @@ def remote_col_test(expected_bbox: list[float] | None):
         )
 
     # Check that assets are accessible once signed
-    for i in col.get_items():
+    items = list(col.get_items())
+    assert len(items) > 1
+    for i in items:
         for asset_key, asset in i.get_assets().items():
             assert stac.asset_exists(asset.href), f"Asset {asset} doesn't exist"
             assert "?" not in asset.href, f"The asset URL looks signed: {asset.href}"
@@ -218,6 +221,15 @@ def test_push():
     log.info("get OK")
 
     log.info("Done")
+
+    try:
+        transfer.push(
+            local_filename=local_file,
+            target_url=target_url.replace(".fr", ".fr/dfogijdfgoij"),
+        )
+        sys.exit(5)  # pragma: no cover
+    except requests.exceptions.HTTPError:
+        pass
 
 
 @pytest.mark.parametrize("overwrite", [["-o"], []])

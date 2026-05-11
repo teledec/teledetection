@@ -26,6 +26,10 @@ stages:
 
 .static_analysis_base:
   allow_failure: false
+  needs: []
+
+pages_test:
+  needs: []
 
 Tests with docker compose:
   except: [tags]

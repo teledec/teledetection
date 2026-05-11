@@ -4,7 +4,7 @@ import os
 import tempfile
 import subprocess
 import getpass
-from typing import Dict, List
+from typing import Dict
 import datetime
 import click
 
@@ -43,7 +43,7 @@ def _http(route: str, params: dict | None = None):
     return ret
 
 
-def _get_all_keys() -> List[str]:
+def _get_all_keys() -> list[str]:
     """Retrieve all API keys."""
     return _http("list_api_keys_with_metadata").json()
 

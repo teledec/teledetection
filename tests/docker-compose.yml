@@ -5,6 +5,7 @@ services:
       LOGLEVEL: INFO
       SKIP_AUTH_LINK: ${SKIP_AUTH_LINK}
       INDENT_JSON: ON
+      TLD_URL_DURATION: 3600
       TLD_SIGNING_ENDPOINT: "https://signing-dev.stac.teledetection.fr"
     build:
       context: ..

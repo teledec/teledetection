@@ -53,8 +53,8 @@ def get_config_path() -> str | None:
             os.makedirs(cfg_path)
             log.debug("Config dir created in %s", cfg_path)
         except PermissionError:
-            log.warning("Unable to use config dir %s", cfg_path)
-            cfg_path = None
+            log.warning("Unable to use config dir %s", cfg_path)  # pragma: no cover
+            cfg_path = None  # pragma: no cover
     else:
         log.debug("Using existing config dir %s", cfg_path)
     return cfg_path

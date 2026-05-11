@@ -12,7 +12,6 @@ from pystac.asset import Asset
 from pystac.item import Item
 from pystac.extensions.projection import AssetProjectionExtension
 from pystac.extensions.raster import RasterBand, RasterExtension, Statistics
-from pystac.extensions.timestamps import ItemTimestampsExtension
 from pystac.errors import ExtensionNotImplemented
 
 from teledetection.sdk.logger import get_logger_for
@@ -330,16 +329,8 @@ def apply_raster_extension(asset: Asset):
         raster_ext.apply(**raster_ext_args)
 
 
-def apply_published_extension(item: Item):
-    """Apply published date extension.
-
-    Args:
-        asset: cog raster asset
-
-    Returns:
-        None
-    """
+def apply_created_metadata(item: Item):
+    """Apply time metadata to item."""
     # Timestamps
-    logger.debug("Apply timestamp extension for published date")
-    ts_ext = ItemTimestampsExtension.ext(item, add_if_missing=True)
-    ts_ext.apply(published=datetime.now())
+    logger.debug("Apply created metadata to item")
+    item.common_metadata.created = datetime.now()

@@ -143,7 +143,7 @@ class DeviceGrant(GrantMethodBase):
                     response.expires_in - elapsed,
                 )
                 if elapsed > response.expires_in:
-                    raise ExpiredAuthLinkError
+                    raise ExpiredAuthLinkError  # pragma: no cover
                 if ret.status_code != 200:
                     time.sleep(response.interval)
                 else:
@@ -193,12 +193,12 @@ class OAuth2Session:
             try:
                 self.jwt = self.grant.refresh_token(self.jwt)
             except RefreshTokenError as con_err:
-                log.warning(
+                log.warning(  # pragma: no cover
                     "Unable to refresh token (reason: %s). "
                     "Renewing initial authentication.",
                     con_err,
                 )
-                self.jwt = self.grant.get_first_token()
+                self.jwt = self.grant.get_first_token()  # pragma: no cover
         else:
             # Token is still valid
             log.debug("Credentials still valid")

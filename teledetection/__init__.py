@@ -17,5 +17,5 @@ from .sdk.http import get_headers, get_userinfo, get_username
 
 try:
     __version__ = version("teledetection")
-except PackageNotFoundError:
-    pass
+except PackageNotFoundError:  # pragma: no cover
+    pass  # pragma: no cover

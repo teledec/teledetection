@@ -11,7 +11,7 @@ import time
 from copy import deepcopy
 from datetime import datetime, timezone
 from functools import singledispatch
-from typing import Any, Dict, List, Mapping, TypeVar, cast
+from typing import Any, Dict, Mapping, TypeVar, cast
 from enum import Enum
 from urllib.parse import parse_qs, urlparse
 
@@ -143,7 +143,7 @@ class SignURLRoute(Enum):
     SIGN_URLS_PUT = "sign_urls_put"
 
 
-def _generic_sign_urls(urls: List[str], route: SignURLRoute) -> Dict[str, str]:
+def _generic_sign_urls(urls: list[str], route: SignURLRoute) -> Dict[str, str]:
     """Sign URLs with a S3 Token.
 
     Signing URL allows read access to files in storage.
@@ -192,12 +192,12 @@ def _generic_sign_urls(urls: List[str], route: SignURLRoute) -> Dict[str, str]:
     return signed_urls
 
 
-def sign_urls(urls: List[str]) -> Dict[str, str]:
+def sign_urls(urls: list[str]) -> Dict[str, str]:
     """Sign multiple URLs for GET."""
     return _generic_sign_urls(urls=urls, route=SignURLRoute(SignURLRoute.SIGN_URLS_GET))
 
 
-def sign_urls_put(urls: List[str]) -> Dict[str, str]:
+def sign_urls_put(urls: list[str]) -> Dict[str, str]:
     """Sign multiple URLs for PUT."""
     return _generic_sign_urls(urls=urls, route=SignURLRoute(SignURLRoute.SIGN_URLS_PUT))
 
@@ -424,7 +424,7 @@ sign_reference_file = sign_mapping
 
 
 def _generic_get_signed_urls(
-    urls: List[str],
+    urls: list[str],
     route: SignURLRoute,
 ) -> Dict[str, SignedURL]:
     """Get multiple signed URLs.
