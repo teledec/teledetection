@@ -3,6 +3,7 @@
 import os
 import time
 import datetime
+from urllib.parse import parse_qs, urlparse
 import requests
 import pystac_client
 
@@ -373,3 +374,53 @@ def test_sign():
     # URL outside domain signing
     url_out = "https://something-else-outside.org/file.tif"
     assert teledetection.sign(url_out) == url_out
+
+
+def test_already_signed():
+    """Test signing already signed URLs."""
+    # Get an asset href
+    api = pystac_client.Client.open(STAC_ENDPOINT)
+    res = api.search()
+    item = next(res.items())
+    href = item.assets[list(item.assets.keys())[0]].href
+
+    def _valid(url: str) -> bool:
+        """Return if the signed URL is valid."""
+        parsed_url = urlparse(url)
+        parsed_qs = parse_qs(parsed_url.query)
+        dt_str = str(parsed_qs.get("X-Amz-Date", [""])[0])
+        ex_str = str(parsed_qs.get("X-Amz-Expires", [""])[0])
+        dt = datetime.datetime.strptime(dt_str, "%Y%m%dT%H%M%SZ").replace(
+            tzinfo=datetime.timezone.utc
+        )
+        td = datetime.timedelta(seconds=int(ex_str))
+        return dt.replace(tzinfo=datetime.timezone.utc) + td > datetime.datetime.now(
+            datetime.timezone.utc
+        )
+
+    def _make_url(dt: str, expires_secs: str) -> str:
+        """Return an already signed URL."""
+        params = [
+            "X-Amz-Algorithm=AWS4-HMAC-SHA256",
+            "X-Amz-Credential=xxxxxxxxxxxxxxxxxxxxxx60527%2Fus-east-1%2Fs3%2Faws4_request",
+            f"X-Amz-Date={dt}",
+            f"X-Amz-Expires={expires_secs}",
+            "X-Amz-SignedHeaders=host"
+            "X-Amz-Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx6d7add90ad7f1b4",
+        ]
+        log.debug("Parameters: %s", params)
+        return href + "&".join(params)
+
+    old_date = datetime.datetime(year=2020, month=1, day=1)
+    for wrong_expired_url in [
+        _make_url(dt="not-a-date-value", expires_secs=3600),
+        _make_url(dt=old_date, expires_secs="not-int-value"),
+    ]:
+        expired_url_resigned = teledetection.sign(wrong_expired_url)
+        assert _valid(expired_url_resigned)
+
+    expired_url = _make_url(dt=old_date, expires_secs=3600)
+    valid_url = teledetection.sign(expired_url)
+    assert _valid(valid_url)
+    new_valid_url = teledetection.sign(expired_url)
+    assert new_valid_url == valid_url

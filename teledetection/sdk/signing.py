@@ -9,7 +9,7 @@ import math
 import re
 import time
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from functools import singledispatch
 from typing import Any, Dict, Mapping, TypeVar, cast
 from enum import Enum
@@ -42,6 +42,14 @@ asset_xpr = re.compile(
 log = get_logger_for(__name__)
 
 
+class NotSignedURL(Exception):
+    """The URL is not signed."""
+
+
+class ExpiredSignedURL(Exception):
+    """The signed URL has expired."""
+
+
 class URLBase(BaseModel):  # pylint: disable = R0903
     """Base model for responses."""
 
@@ -57,6 +65,37 @@ class SignedURL(URLBase):  # pylint: disable = R0903
     def ttl(self) -> float:
         """Return the number of seconds the token is still valid for."""
         return (self.expiry - datetime.now(timezone.utc)).total_seconds()
+
+    @classmethod
+    def from_already_signed(cls, signed_href: str):
+        """Create an instance from an already signed URL."""
+        parsed_url = urlparse(signed_href.rstrip("/"))
+        parsed_qs = parse_qs(parsed_url.query)
+        parsed_date = parsed_qs.get("X-Amz-Date", [""])
+        parsed_expiry = parsed_qs.get("X-Amz-Expires", [""])
+
+        # Grab date
+        try:
+            log.debug("Parsing date from signed URL %s (%s)", signed_href, parsed_date)
+            parsed_datetime = datetime.strptime(
+                parsed_date[0], "%Y%m%dT%H%M%SZ"
+            ).replace(tzinfo=timezone.utc)
+        except ValueError as err:
+            raise NotSignedURL(f"Cannot parse date from URL {signed_href}") from err
+
+        # Grab expiry
+        try:
+            log.debug("Parsing expiry from signed URL %s", signed_href)
+            parsed_expiry_td = timedelta(seconds=int(parsed_expiry[0]))
+        except ValueError as err:
+            raise NotSignedURL(f"Cannot parse expiry from URL {signed_href}") from err
+
+        # Try to instantiate the SignedURL object and check its TTL
+        if (
+            url := cls(expiry=parsed_datetime + parsed_expiry_td, href=signed_href)
+        ).ttl() < ENV.tld_ttl_margin:
+            raise ExpiredSignedURL(f"The signed URL {signed_href} has expired")
+        return url
 
 
 class SignedURLBatch(URLBase):  # pylint: disable = R0903
@@ -162,23 +201,12 @@ def _generic_sign_urls(urls: list[str], route: SignURLRoute) -> Dict[str, str]:
     """
     signed_urls = {}
     for url in urls:
-        stripped_url = url.rstrip("/")
-        parsed_url = urlparse(stripped_url)
-        if not parsed_url.netloc.endswith(S3_STORAGE_DOMAIN):
+        if not urlparse(url.rstrip("/")).netloc.endswith(S3_STORAGE_DOMAIN):
             # Outside our domain
             signed_urls[url] = url
         # elif parsed_url.netloc == "????":
         #     # special case for public assets storing thumbnails...
         #     return url
-        else:
-            parsed_qs = parse_qs(parsed_url.query)
-            if set(parsed_qs) & {
-                "X-Amz-Security-Token",
-                "X-Amz-Signature",
-                "X-Amz-Credential",
-            }:
-                #  looks like we've already signed it
-                signed_urls[url] = url
 
     not_signed_urls = [url for url in urls if url not in signed_urls]
     signed_urls.update(
@@ -448,11 +476,14 @@ def _generic_get_signed_urls(
 
     signed_urls = {}
     for url in urls:
-        signed_url_in_cache = CACHE.get(url)
-        if signed_url_in_cache and route == SignURLRoute.SIGN_URLS_GET:
+        if route != SignURLRoute.SIGN_URLS_GET:
+            # For write access, we don't filter out URLs.
+            continue
+        # Check if the URL is already in the cache
+        if signed_url_in_cache := CACHE.get(url):
             log.debug("URL %s already in cache", url)
             ttl = signed_url_in_cache.ttl()
-            log.debug("URL %s TTL is %s", url, ttl)
+            log.debug("Cached URL %s TTL is %s seconds", url, ttl)
             if ttl > ENV.tld_ttl_margin:
                 log.debug(
                     "Using cache (%s > %s)",
@@ -460,6 +491,13 @@ def _generic_get_signed_urls(
                     ENV.tld_ttl_margin,
                 )
                 signed_urls[url] = signed_url_in_cache
+        # If the URL is not in the cache, check if it is already signed
+        else:
+            try:
+                signed_urls[url] = SignedURL.from_already_signed(url)
+                log.debug("Reusing the signing URL because it's still valid.")
+            except (NotSignedURL, ExpiredSignedURL) as err:
+                log.debug("The existing URL cannot be reused (%s)", err)
     not_signed_urls = [url for url in urls if url not in signed_urls]
     log.debug("Already signed URLs:\n %s", signed_urls)
     log.debug("Not signed URLs:\n %s", not_signed_urls)
