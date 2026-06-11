@@ -13,6 +13,8 @@ from .sdk.logger import get_logger_for
 from .sdk.model import ApiKey
 from .sdk.http import OAuth2ConnectionMethod
 from .sdk.utils import create_session
+from .sdk.signing import sign_string
+from .sdk.files import update_hrefs_in_file, update_hrefs_in_qgz
 
 
 @click.group(
@@ -115,6 +117,23 @@ def do_remove_key(dont_revoke: bool):
     ApiKey.delete_from_config_dir()
 
 
+def do_sign_url(url: str):
+    """Sign an URL."""
+    log.info("Signed url: %s", sign_string(url))
+
+
+def do_sign_file(filepath: str):
+    """Sign all URL in the provided file (modified in place)."""
+    update_hrefs_in_file(filepath=filepath)
+    log.info("All URLs in file %s updated", filepath)
+
+
+def do_sign_qgz(filepath: str):
+    """Sign all URLs in the provided QGIS project file (modified in place)."""
+    update_hrefs_in_qgz(filepath=filepath)
+    log.info("All URLs in QGIS project %s updated", filepath)
+
+
 API_KEY_OPS = {
     "create": lambda arg: do_create_key(description=arg),
     "revoke": lambda arg: do_revoke_key(access_key=arg),
@@ -122,6 +141,13 @@ API_KEY_OPS = {
     "register": lambda arg: do_register_key(description=arg),
     "remove": lambda arg: do_remove_key(dont_revoke=any(arg)),
     "list": lambda arg: do_list_keys(),
+}
+
+
+SIGN_KEY_OPS = {
+    "url": lambda arg: do_sign_url(url=arg),
+    "file": lambda arg: do_sign_file(filepath=arg),
+    "qgis": lambda arg: do_sign_qgz(filepath=arg),
 }
 
 
@@ -155,6 +181,29 @@ def apikey(ctx, operation: str, argument: str):
         click.echo(ctx.get_help())
         ctx.exit(0)
     API_KEY_OPS[operation](argument)
+
+
+@tld.command()
+@click.argument(
+    "operation",
+    type=click.Choice(list(SIGN_KEY_OPS.keys()), case_sensitive=False),
+    required=False,
+)
+@click.argument("argument")
+@click.pass_context
+def sign(ctx, operation: str, argument: str):
+    """Sign HREFs.
+
+    \b
+    Operations:
+      url         : Sign an URL
+      file        : Sign all URLs in the provided file (modified in place)
+      qgis        : Sign all URLs of a QGIS project file (modified in place)
+    """
+    if not operation:
+        click.echo(ctx.get_help())
+        ctx.exit(0)
+    SIGN_KEY_OPS[operation](argument)
 
 
 try:
@@ -229,7 +278,9 @@ try:
     )
     @click.option("-c", "--col_id", type=str, help="STAC collection ID", required=True)
     @click.option("-i", "--item_id", type=str, default=None, help="STAC item ID")
-    @click.option("-s", "--sign", is_flag=True, default=False, help="Sign assets HREFs")
+    @click.option(
+        "-s", "--sign", "_sign", is_flag=True, default=False, help="Sign assets HREFs"
+    )
     @click.option(
         "-p", "--pretty", is_flag=True, default=False, help="Pretty indent JSON"
     )
@@ -238,12 +289,12 @@ try:
         stac_endpoint: str,
         col_id: str,
         item_id: str,
-        sign: bool,
+        _sign: bool,
         pretty: bool,
         out_json: str,
     ):
         """Grab a STAC object (collection, or item) and save it as .json."""
-        StacTransactionsHandler(stac_endpoint=stac_endpoint, sign=sign).load_and_save(
+        StacTransactionsHandler(stac_endpoint=stac_endpoint, sign=_sign).load_and_save(
             col_id=col_id, obj_pth=out_json, item_id=item_id, pretty=pretty
         )
 
@@ -320,11 +371,13 @@ try:
     @click.option(
         "-m", "--max_items", type=int, help="Max number of items to display", default=20
     )
-    @click.option("-s", "--sign", is_flag=True, default=False, help="Sign assets HREFs")
-    def list_col_items(stac_endpoint: str, col_id: str, max_items: int, sign: bool):
+    @click.option(
+        "-s", "--sign", "_sign", is_flag=True, default=False, help="Sign assets HREFs"
+    )
+    def list_col_items(stac_endpoint: str, col_id: str, max_items: int, _sign: bool):
         """List collection items."""
         items = StacTransactionsHandler(
-            stac_endpoint=stac_endpoint, sign=sign
+            stac_endpoint=stac_endpoint, sign=_sign
         ).get_items(col_id=col_id, max_items=max_items)
         print(f"Found {len(items)} item(s):")
         for item in items:

@@ -2,6 +2,8 @@
 
 import os
 import time
+import tempfile
+import json
 import datetime
 from urllib.parse import parse_qs, urlparse
 import requests
@@ -14,11 +16,20 @@ from teledetection.cli import (
     _create_new_key,
     _get_all_keys,
     apikey,
+    sign,
 )
 from teledetection.sdk.logger import get_logger_for
 
 
 STAC_ENDPOINT = "https://api.stac.teledetection.fr"
+SIGNED_URL = (
+    "https://s3-data.meso.umontpellier.fr/sm1-gdc/spot-6-7-solar-panels-v2/"
+    "SPOT6_MS_202310011034231_SPOT6_P_202310011034231/argmax.tif"
+    "?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=xxxxxxxxxxxxxxxx"
+    "xxxxxxxxxxx0527%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260427T1"
+    "23526Z&X-Amz-Expires=28800&X-Amz-SignedHeaders=host&X-Amz-Signature=x"
+    "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxbe0241feea2970"
+)
 
 log = get_logger_for(__name__)
 
@@ -424,3 +435,31 @@ def test_already_signed():
     assert _valid(valid_url)
     new_valid_url = teledetection.sign(expired_url)
     assert new_valid_url == valid_url
+
+
+def test_sign_url():
+    """Test single URL signing with CLI."""
+    run_cli_cmd(sign, ["url", f"/vsicurl/{SIGNED_URL}"])
+
+
+def _get(href: str):
+    """Requests GET."""
+    ret = requests.get(href, timeout=10)
+    ret.raise_for_status()
+
+
+def test_sign_file():
+    """Test file content signing with CLI."""
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpfile = os.path.join(tmpdir, "file.txt")
+        with open(tmpfile, "w", encoding="utf8") as file_handle:
+            file_handle.write(f'{{"source": "{SIGNED_URL}"}}')
+        run_cli_cmd(sign, ["file", tmpfile])
+
+        # Check that the URL can be accessed
+        with open(tmpfile, "r", encoding="utf8") as file_handle:
+            data = json.load(file_handle)
+            signed_url = data["source"]
+            _check_signed(signed_url)
+            _get(signed_url)
