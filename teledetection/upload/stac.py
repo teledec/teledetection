@@ -407,6 +407,9 @@ class StacUploadTransactionsHandler(StacTransactionsHandler):
             self.storage_endpoint, f"{self.storage_bucket}/{col_id}/"
         )
         local_filename = asset.href
+        if local_filename.startswith(("https://", "http://")):
+            logger.warning(f"{local_filename} is not local, asset will not be pushed")
+            return
         logger.debug("Local file: %s", local_filename)
 
         file_relative_path = os.path.relpath(local_filename, assets_root_dir)
